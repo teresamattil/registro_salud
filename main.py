@@ -6,7 +6,7 @@ from datetime import date
 
 st.set_page_config(page_title="Diario de comidas", layout="centered")
 
-REPO = "USUARIO/REPO"
+REPO = "teresamattil/registro_salud"
 FILE = "comidas.csv"
 API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE}"
 RAW_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
