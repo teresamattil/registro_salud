@@ -14,10 +14,15 @@ TOKEN = st.secrets["GITHUB_TOKEN"]
 HEADERS = {"Authorization": f"token {TOKEN}"}
 
 @st.cache_data(ttl=60)
+@st.cache_data(ttl=60)
 def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
+    if "content" not in r:
+        st.error(f"Error loading file from GitHub: {r.get('message', r)}")
+        return pd.DataFrame(columns=["fecha","hora","comida","ruta_foto","calorías_estimadas"])
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
+
 
 df = load_data()
 df["fecha"] = pd.to_datetime(df["fecha"]).dt.date
