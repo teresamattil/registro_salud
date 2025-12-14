@@ -36,7 +36,7 @@ st.divider()
 
 with st.form("add_food"):
     f = st.date_input("Fecha", date.today())
-    h = st.time_input("Hora", datetime.now().time())
+    h = st.time_input("Hora")
     c = st.text_input("Comida")
     r = st.text_input("Ruta foto")
     k = st.number_input("Calorías estimadas", min_value=0)
