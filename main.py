@@ -169,6 +169,10 @@ if pagina == "📈 Evolución":
         st.plotly_chart(fig, use_container_width=True)
 
     elif vista == "Rango personalizado":
+        col1, col2 = st.columns(2) 
+        with col1: inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min()) 
+        with col2: fin = st.date_input("Fecha fin", df_daily["Fecha"].max()) 
+        df_plot = df_daily[ (df_daily["Fecha"] >= inicio) & (df_daily["Fecha"] <= fin) ].copy()
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
