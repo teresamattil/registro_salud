@@ -170,11 +170,20 @@ if pagina == "📈 Evolución":
 
     elif vista == "Rango personalizado":
         col1, col2 = st.columns(2) 
-        with col1: inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min()) 
-        with col2: fin = st.date_input("Fecha fin", df_daily["Fecha"].max()) 
-        df_plot = df_daily[ (df_daily["Fecha"] >= inicio) & (df_daily["Fecha"] <= fin) ].copy()
-        fig = go.Figure()
+        with col1:
+            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min()) 
+        with col2:
+            fin = st.date_input("Fecha fin", df_daily["Fecha"].max()) 
 
+        df_plot = df_daily[
+            (df_daily["Fecha"] >= inicio) & (df_daily["Fecha"] <= fin)
+        ].copy()
+
+        # Añadir las columnas necesarias
+        df_plot["Hasta_objetivo"] = df_plot["calorías_estimadas"].clip(upper=objetivo)
+        df_plot["Exceso"] = (df_plot["calorías_estimadas"] - objetivo).clip(lower=0)
+
+        fig = go.Figure()
         fig.add_trace(go.Bar(
             x=df_plot["Fecha"],
             y=df_plot["Hasta_objetivo"],
@@ -195,6 +204,7 @@ if pagina == "📈 Evolución":
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 
 
