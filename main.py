@@ -169,29 +169,26 @@ if pagina == "📈 Evolución":
         st.plotly_chart(fig, use_container_width=True)
 
     elif vista == "Rango personalizado":
-        col1, col2 = st.columns(2)
-        with col1:
-            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
-        with col2:
-            fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
+        fig = go.Figure()
 
-        df_plot = df_daily[
-            (df_daily["Fecha"] >= inicio) &
-            (df_daily["Fecha"] <= fin)
-        ].copy()
+        fig.add_trace(go.Bar(
+            x=df_plot["Fecha"],
+            y=df_plot["Hasta_objetivo"],
+            name="Hasta objetivo",
+            marker_color="#115a8e"
+        ))
 
-        df_plot["Hasta_objetivo"] = df_plot["calorías_estimadas"].clip(upper=objetivo)  # azul
-        df_plot["Exceso"] = (df_plot["calorías_estimadas"] - objetivo).clip(lower=0)    # rojo
+        fig.add_trace(go.Bar(
+            x=df_plot["Fecha"],
+            y=df_plot["Exceso"],
+            name="Exceso",
+            marker_color="#d93725"
+        ))
 
-        fig = px.bar(
-            df_plot,
-            x="Fecha",
-            y=["Hasta_objetivo", "Exceso"],
+        fig.update_layout(
+            barmode="stack",
             title="Calorías diarias (rango personalizado)",
         )
-
-        fig.update_traces(marker_color=["#115a8e", "#d93725"])
-        fig.update_layout(barmode="stack")
 
         st.plotly_chart(fig, use_container_width=True)
 
