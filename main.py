@@ -44,23 +44,44 @@ st.dataframe(
     use_container_width=True
 )
 
-objetivo = 2000
-consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
-restantes = max(objetivo - consumidas, 0)
+# BOTÓN PARA MOSTRAR / OCULTAR GRÁFICO
+if "mostrar_grafico" not in st.session_state:
+    st.session_state.mostrar_grafico = False
 
-fig = go.Figure(
-    data=[go.Pie(
-        values=[consumidas, restantes],
-        labels=["Consumidas", "Restantes"],
-        hole=0.7
-    )]
-)
-fig.update_layout(
-    title=f"Calorías del día ({consumidas} / {objetivo})",
-    margin=dict(t=50, b=0, l=0, r=0)
-)
+if st.button("📊 Ver calorías del día"):
+    st.session_state.mostrar_grafico = not st.session_state.mostrar_grafico
 
-st.plotly_chart(fig, use_container_width=True)
+
+if st.session_state.mostrar_grafico:
+    objetivo = 2000
+    consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
+    restantes = max(objetivo - consumidas, 0)
+
+    fig = go.Figure(
+        data=[go.Pie(
+            values=[consumidas, restantes],
+            labels=["Consumidas", "Restantes"],
+            hole=0.7,
+            textinfo="none"
+        )]
+    )
+
+    fig.add_annotation(
+        text=f"{int(consumidas)} kcal",
+        x=0.5,
+        y=0.5,
+        font_size=24,
+        showarrow=False
+    )
+
+    fig.update_layout(
+        title=f"Calorías del día ({consumidas} / {objetivo})",
+        margin=dict(t=50, b=0, l=0, r=0),
+        showlegend=True
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
 
 st.divider()
 
