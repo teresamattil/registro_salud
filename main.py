@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import base64
 from datetime import date, datetime
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Diario de comidas", layout="centered")
 
@@ -27,15 +28,51 @@ def load_data():
 df = load_data()
 df["fecha"] = pd.to_datetime(df["fecha"]).dt.date
 
-st.title("🍽️ Diario de comidas prueba")
+st.title("🍽️ Diario de comidas")
 
-dia = st.date_input("Día", date.today())
-st.dataframe(df[df["fecha"] == dia], use_container_width=True)
+dia = st.date_input(
+    "Día",
+    st.session_state.dia_seleccionado,
+    key="dia_selector"
+)
+st.session_state.dia_seleccionado = dia
+
+cols_resumen = ["fecha", "hora", "comida", "calorías_estimadas"]
+st.dataframe(
+    df[df["fecha"] == dia][cols_resumen],
+    use_container_width=True
+)
+
+
+objetivo = 2000  # ajusta si quieres
+
+consumidas = df[df["fecha"] == dia]["calorías_estimadas"].sum()
+restantes = max(objetivo - consumidas, 0)
+
+fig = go.Figure(
+    data=[go.Pie(
+        values=[consumidas, restantes],
+        labels=["Consumidas", "Restantes"],
+        hole=0.7
+    )]
+)
+
+fig.update_layout(
+    title=f"Calorías del día ({consumidas} / {objetivo})",
+    showlegend=True,
+    margin=dict(t=50, b=0, l=0, r=0)
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
 
 st.divider()
 
 with st.form("add_food"):
-    f = st.date_input("Fecha", date.today())
+    if "dia_seleccionado" not in st.session_state:
+        st.session_state.dia_seleccionado = date.today()
+
+    f = st.date_input("Fecha", st.session_state.dia_seleccionado)
     h = st.time_input("Hora")
     c = st.text_input("Comida")
     r = st.text_input("Ruta foto")
