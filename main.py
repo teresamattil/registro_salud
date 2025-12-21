@@ -20,13 +20,13 @@ def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
     if "content" not in r:
         st.error(f"Error loading file from GitHub: {r.get('message', r)}")
-        return pd.DataFrame(columns=["fecha","hora","comida","ruta_foto","calorías_estimadas"])
+        return pd.DataFrame(columns=["Fecha","hora","comida","ruta_foto","calorías_estimadas"])
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
 
 
 df = load_data()
-df["fecha"] = pd.to_datetime(df["fecha"]).dt.date
+df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 st.title("🍽️ Diario de comidas")
 
@@ -37,16 +37,16 @@ dia = st.date_input(
 )
 st.session_state.dia_seleccionado = dia
 
-cols_resumen = ["fecha", "hora", "comida", "calorías_estimadas"]
+cols_resumen = ["Fecha", "hora", "comida", "calorías_estimadas"]
 st.dataframe(
-    df[df["fecha"] == dia][cols_resumen],
+    df[df["Fecha"] == dia][cols_resumen],
     use_container_width=True
 )
 
 
 objetivo = 2000  # ajusta si quieres
 
-consumidas = df[df["fecha"] == dia]["calorías_estimadas"].sum()
+consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
 restantes = max(objetivo - consumidas, 0)
 
 fig = go.Figure(
@@ -86,7 +86,7 @@ if submit:
     h_str = h.strftime("%H:%M")
 
     new_row = {
-        "fecha": f,
+        "Fecha": f,
         "hora": h_str,
         "comida": c,
         "ruta_foto": r,
