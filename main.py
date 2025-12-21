@@ -190,9 +190,11 @@ if pagina == "📈 Evolución":
             title="Calorías diarias (rango personalizado)",
         )
 
-        fig.update_traces(marker_color=["#1f77b4", "red"])
+        fig.update_traces(marker_color=["#115a8e", "#d93725"])
+        fig.update_layout(barmode="stack")
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 
     else:
