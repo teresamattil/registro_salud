@@ -13,6 +13,7 @@ FILE = "comidas.csv"
 API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE}"
 TOKEN = st.secrets["GITHUB_TOKEN"]
 HEADERS = {"Authorization": f"token {TOKEN}"}
+objetivo = 2000
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -61,7 +62,7 @@ if pagina == "📅 Resumen diario":
         st.session_state.mostrar_grafico = not st.session_state.mostrar_grafico
 
     if st.session_state.mostrar_grafico:
-        objetivo = 2000
+
         consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
         restantes = max(objetivo - consumidas, 0)
 
@@ -131,7 +132,7 @@ if pagina == "📅 Resumen diario":
 
 # ================= PÁGINA 2 =================
 if pagina == "📈 Evolución":
-    st.title("📈 Evolución de calorías")
+    st.title("Evolución de calorías")
 
     df_daily = (
         df.groupby("Fecha", as_index=False)["calorías_estimadas"]
@@ -145,58 +146,81 @@ if pagina == "📈 Evolución":
         horizontal=True
     )
 
-    if vista == "Último mes (diario)":
-        ultimo_mes = date.today().replace(day=1)
-        df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes]
+if vista == "Último mes (diario)":
+    ultimo_mes = date.today().replace(day=1)
+    df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes]
 
-        fig = px.line(
-            df_plot,
-            x="Fecha",
-            y="calorías_estimadas",
-            markers=True,
-            title="Calorías diarias (último mes)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    fig = px.line(
+        df_plot,
+        x="Fecha",
+        y="calorías_estimadas",
+        markers=True,
+        title="Calorías diarias (último mes)"
+    )
 
-    elif vista == "Rango personalizado":
-        col1, col2 = st.columns(2)
-        with col1:
-            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
-        with col2:
-            fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
+    fig.add_hline(
+        y=objetivo,
+        line_dash="dash",
+        line_color="orange",
+        annotation_text="Objetivo",
+        annotation_position="top left"
+    )
 
-        df_plot = df_daily[
-            (df_daily["Fecha"] >= inicio) &
-            (df_daily["Fecha"] <= fin)
-        ]
+    st.plotly_chart(fig, use_container_width=True)
 
-        fig = px.bar(
-            df_plot,
-            x="Fecha",
-            y="calorías_estimadas",
-            title="Calorías diarias (rango personalizado)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+elif vista == "Rango personalizado":
+    col1, col2 = st.columns(2)
+    with col1:
+        inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
+    with col2:
+        fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
 
+    df_plot = df_daily[
+        (df_daily["Fecha"] >= inicio) &
+        (df_daily["Fecha"] <= fin)
+    ].copy()
 
-    else:
-        df_monthly = df.copy()
-        df_monthly["Año"] = pd.to_datetime(df_monthly["Fecha"]).dt.year
-        df_monthly["Mes"] = pd.to_datetime(df_monthly["Fecha"]).dt.month
+    df_plot["Consumidas"] = df_plot["calorías_estimadas"]
+    df_plot["Restantes"] = (objetivo - df_plot["Consumidas"]).clip(lower=0)
 
-        df_avg = (
-            df_monthly.groupby(["Año", "Mes"])["calorías_estimadas"]
-            .mean()
-            .reset_index()
-        )
+    fig = px.bar(
+        df_plot,
+        x="Fecha",
+        y=["Consumidas", "Restantes"],
+        title="Calorías diarias (rango personalizado)",
+    )
 
-        df_avg["Periodo"] = df_avg["Año"].astype(str) + "-" + df_avg["Mes"].astype(str)
+    fig.update_traces(marker_color=["#1f77b4", "red"])
 
-        fig = px.line(
-            df_avg,
-            x="Periodo",
-            y="calorías_estimadas",
-            markers=True,
-            title="Media diaria mensual (visión anual)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
+
+else:
+    df_monthly = df.copy()
+    df_monthly["Año"] = pd.to_datetime(df_monthly["Fecha"]).dt.year
+    df_monthly["Mes"] = pd.to_datetime(df_monthly["Fecha"]).dt.month
+
+    df_avg = (
+        df_monthly.groupby(["Año", "Mes"])["calorías_estimadas"]
+        .mean()
+        .reset_index()
+    )
+
+    df_avg["Periodo"] = df_avg["Año"].astype(str) + "-" + df_avg["Mes"].astype(str)
+
+    fig = px.line(
+        df_avg,
+        x="Periodo",
+        y="calorías_estimadas",
+        markers=True,
+        title="Media diaria mensual (visión anual)"
+    )
+
+    fig.add_hline(
+        y=objetivo,
+        line_dash="dash",
+        line_color="orange",
+        annotation_text="Objetivo",
+        annotation_position="top left"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
