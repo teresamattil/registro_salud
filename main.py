@@ -141,7 +141,7 @@ if pagina == "📈 Evolución":
 
     vista = st.radio(
         "Vista",
-        ["Último mes (diario)", "Mes concreto", "Media mensual (anual)"],
+        ["Último mes (diario)", "Rango personalizado", "Media mensual (anual)"],
         horizontal=True
     )
 
@@ -158,20 +158,26 @@ if pagina == "📈 Evolución":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    elif vista == "Mes concreto":
-        mes = st.date_input("Selecciona un mes", date.today())
+    elif vista == "Rango personalizado":
+        col1, col2 = st.columns(2)
+        with col1:
+            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
+        with col2:
+            fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
+
         df_plot = df_daily[
-            (pd.to_datetime(df_daily["Fecha"]).dt.year == mes.year) &
-            (pd.to_datetime(df_daily["Fecha"]).dt.month == mes.month)
+            (df_daily["Fecha"] >= inicio) &
+            (df_daily["Fecha"] <= fin)
         ]
 
         fig = px.bar(
             df_plot,
             x="Fecha",
             y="calorías_estimadas",
-            title="Calorías diarias del mes"
+            title="Calorías diarias (rango personalizado)"
         )
         st.plotly_chart(fig, use_container_width=True)
+
 
     else:
         df_monthly = df.copy()
