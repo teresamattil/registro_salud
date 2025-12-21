@@ -10,25 +10,26 @@ st.set_page_config(page_title="Diario de comidas", layout="centered")
 REPO = "teresamattil/registro_salud"
 FILE = "comidas.csv"
 API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE}"
-RAW_URL = f"https://raw.githubusercontent.com/{REPO}/main/{FILE}"
 TOKEN = st.secrets["GITHUB_TOKEN"]
 HEADERS = {"Authorization": f"token {TOKEN}"}
 
 @st.cache_data(ttl=60)
-@st.cache_data(ttl=60)
 def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
     if "content" not in r:
-        st.error(f"Error loading file from GitHub: {r.get('message', r)}")
-        return pd.DataFrame(columns=["Fecha","hora","comida","ruta_foto","calorías_estimadas"])
+        return pd.DataFrame(
+            columns=["Fecha", "hora", "comida", "ruta_foto", "calorías_estimadas"]
+        )
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
-
 
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 st.title("🍽️ Diario de comidas")
+
+if "dia_seleccionado" not in st.session_state:
+    st.session_state.dia_seleccionado = date.today()
 
 dia = st.date_input(
     "Día",
@@ -43,9 +44,7 @@ st.dataframe(
     use_container_width=True
 )
 
-
-objetivo = 2000  # ajusta si quieres
-
+objetivo = 2000
 consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
 restantes = max(objetivo - consumidas, 0)
 
@@ -56,24 +55,18 @@ fig = go.Figure(
         hole=0.7
     )]
 )
-
 fig.update_layout(
     title=f"Calorías del día ({consumidas} / {objetivo})",
-    showlegend=True,
     margin=dict(t=50, b=0, l=0, r=0)
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-
 st.divider()
 
 with st.form("add_food"):
-    if "dia_seleccionado" not in st.session_state:
-        st.session_state.dia_seleccionado = date.today()
-
     f = st.date_input("Fecha", st.session_state.dia_seleccionado)
-    h = st.time_input("Hora")
+    h = st.time_input("Hora", datetime.now().time())
     c = st.text_input("Comida")
     r = st.text_input("Ruta foto")
     k = st.number_input("Calorías estimadas", min_value=0)
@@ -83,11 +76,9 @@ if submit:
     r_api = requests.get(API_URL, headers=HEADERS).json()
     sha = r_api["sha"]
 
-    h_str = h.strftime("%H:%M")
-
     new_row = {
         "Fecha": f,
-        "hora": h_str,
+        "hora": h.strftime("%H:%M"),
         "comida": c,
         "ruta_foto": r,
         "calorías_estimadas": k
@@ -110,4 +101,4 @@ if submit:
 
     st.cache_data.clear()
     st.rerun()
-    st.success("Comida guardada correctamente.")
+st.markdown("---")
