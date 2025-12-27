@@ -92,15 +92,26 @@ if pagina == "📅 Resumen diario":
 
     st.divider()
 
+    if "hora_seleccionada" not in st.session_state:
+        st.session_state.hora_seleccionada = datetime.utcnow().time()
+
     with st.form("add_food"):
         f = st.date_input("Fecha", st.session_state.dia_seleccionado)
-        h = st.time_input("Hora", datetime.now().time())
+
+        h = st.time_input(
+            "Hora",
+            st.session_state.hora_seleccionada,
+            key="hora_input"
+        )
+
         c = st.text_input("Comida")
         r = st.text_input("Ruta foto")
         k = st.number_input("Calorías estimadas", min_value=0)
         submit = st.form_submit_button("Guardar")
 
     if submit:
+        st.session_state.hora_seleccionada = h
+
         r_api = requests.get(API_URL, headers=HEADERS).json()
         sha = r_api["sha"]
 
