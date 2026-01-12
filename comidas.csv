@@ -288,41 +288,42 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas
 2026-01-08,15:00,Coliflor hervida con salsa al pesto,,250.0
 2026-01-08,16:00,Puñado de picos con salsa al pesto,,200.0
 2026-01-08,20:00,Tostada de salsa al pesto y pavo,,250.0
-2026-01-09,08:00,Cafe con leche,,80
-2026-01-09,08:00,Tostada con aceite y pavo,,180
-2026-01-09,15:00,Berza con tomate y huevo frito ,,350
-2026-01-09,17:00,Bollo tigreton,,200
-2026-01-09,18:15,Cola de caballo,,0
-2026-01-09,21:00,Cena picoteo: sandwichitos jamones y queso+ croissant alioli y pavo + tortilla de patata,,900
-2026-01-09,22:00,2 cervezas,,300
-2026-01-09,23:30,3 Whiskey coca cola cero,,330
-2026-01-10,12:00,Cafe con leche,,80
-2026-01-10,12:00,2 tostadas aceite y pavo,,360
-2026-01-10,16:00,Albóndigas (5) con salsa de pimiento y cebolla y ningún acompañamiento,,450
-2026-01-10,16:45,postre: tiramisú ,,350
-2026-01-10,21:30,Cena picoteo: patatas light+queso untable+tostas ensaladilla+pizza philadelphia y bacon,,1000
-2026-01-10,22:30,3 copas vino blanco,,360
-2026-01-10,23:45,2 whiskey coca cola cero,,220
-2026-01-02,14:00,Bocata camembert jamon y mayonesa,,600
-2026-01-02,15:00,Cafe con leche y bollito de leche con chocolate ,,300
-2026-01-02,19:00,Patatas y doritos ,,300
-2026-01-02,21:30,Dos cervezas,,300
-2026-01-02,23:30,Whiskey coca cola cero,,110
-2026-01-02,23:30,Media pizza jamon y queso masa fina (restaurante),,500
-2026-01-06,14:30,Costillas al horno y patatas fritas ,,800
-2026-01-06,15:15,trozo pequeño roscón de reyes con nata,,300
-2026-01-11,09:30,Cafe con leche ,,80
-2026-01-11,09:30,Tostada de aceite y pavo,,180
-2026-01-11,14:30,Aperitivo: patatas de bolsa con berberechos+fuet+queso viejo curado,,500
-2026-01-11,15:00,Rosbeaf con patatitas en manteuilla y romero + pimientos de piquillo,,650
-2026-01-11,15:45,Cerveza,,150
-2026-01-11,15:30,Copa de vino blanco,,120
-2026-01-11,16:00,Cafe con leche mini,,50
-2026-01-11,16:00,3 trozos turrón chocolate suchard,,250
-2026-01-11,19:30,Infusion cola de caballo,,0
-2026-01-11,21:00,Sopa de fideos de pollo,,250
-2026-01-11,21:00,Revuelto de setas,,250
-2026-01-12,08:00,Cafe con leche,,80
-2026-01-12,11:30,Cafe con leche mini,,50
-2026-01-12,13:00,Platano,,100
-2026-01-12,15:00,Albondigas con salsa de pimiento sin acompañamiento (5 albondigas),,450
+2026-01-09,08:00,Cafe con leche,,80.0
+2026-01-09,08:00,Tostada con aceite y pavo,,180.0
+2026-01-09,15:00,Berza con tomate y huevo frito ,,350.0
+2026-01-09,17:00,Bollo tigreton,,200.0
+2026-01-09,18:15,Cola de caballo,,0.0
+2026-01-09,21:00,Cena picoteo: sandwichitos jamones y queso+ croissant alioli y pavo + tortilla de patata,,900.0
+2026-01-09,22:00,2 cervezas,,300.0
+2026-01-09,23:30,3 Whiskey coca cola cero,,330.0
+2026-01-10,12:00,Cafe con leche,,80.0
+2026-01-10,12:00,2 tostadas aceite y pavo,,360.0
+2026-01-10,16:00,Albóndigas (5) con salsa de pimiento y cebolla y ningún acompañamiento,,450.0
+2026-01-10,16:45,postre: tiramisú ,,350.0
+2026-01-10,21:30,Cena picoteo: patatas light+queso untable+tostas ensaladilla+pizza philadelphia y bacon,,1000.0
+2026-01-10,22:30,3 copas vino blanco,,360.0
+2026-01-10,23:45,2 whiskey coca cola cero,,220.0
+2026-01-02,14:00,Bocata camembert jamon y mayonesa,,600.0
+2026-01-02,15:00,Cafe con leche y bollito de leche con chocolate ,,300.0
+2026-01-02,19:00,Patatas y doritos ,,300.0
+2026-01-02,21:30,Dos cervezas,,300.0
+2026-01-02,23:30,Whiskey coca cola cero,,110.0
+2026-01-02,23:30,Media pizza jamon y queso masa fina (restaurante),,500.0
+2026-01-06,14:30,Costillas al horno y patatas fritas ,,800.0
+2026-01-06,15:15,trozo pequeño roscón de reyes con nata,,300.0
+2026-01-11,09:30,Cafe con leche ,,80.0
+2026-01-11,09:30,Tostada de aceite y pavo,,180.0
+2026-01-11,14:30,Aperitivo: patatas de bolsa con berberechos+fuet+queso viejo curado,,500.0
+2026-01-11,15:00,Rosbeaf con patatitas en manteuilla y romero + pimientos de piquillo,,650.0
+2026-01-11,15:45,Cerveza,,150.0
+2026-01-11,15:30,Copa de vino blanco,,120.0
+2026-01-11,16:00,Cafe con leche mini,,50.0
+2026-01-11,16:00,3 trozos turrón chocolate suchard,,250.0
+2026-01-11,19:30,Infusion cola de caballo,,0.0
+2026-01-11,21:00,Sopa de fideos de pollo,,250.0
+2026-01-11,21:00,Revuelto de setas,,250.0
+2026-01-12,08:00,Cafe con leche,,80.0
+2026-01-12,11:30,Cafe con leche mini,,50.0
+2026-01-12,13:00,Platano,,100.0
+2026-01-12,15:00,Albondigas con salsa de pimiento sin acompañamiento (5 albondigas),,450.0
+2026-01-12,19:41,Albóndigas (5) con salsa de pimiento y ningún acompañamiento ,,0.0
