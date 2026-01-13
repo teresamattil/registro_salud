@@ -58,8 +58,16 @@ if pagina == "📅 Resumen diario":
     if "mostrar_grafico" not in st.session_state:
         st.session_state.mostrar_grafico = False
 
-    if st.button("📊 Ver calorías del día"):
-        st.session_state.mostrar_grafico = not st.session_state.mostrar_grafico
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        st.button("Ver calorías del día", disabled=True)
+
+    with col2:
+        if st.button("Estimar calorías"):
+            pendientes = df[df["calorías_estimadas"] == 0.0]
+            st.write(f"Filas sin calorías estimadas: {len(pendientes)}")
+
 
     if st.session_state.mostrar_grafico:
 
