@@ -5,6 +5,8 @@ import base64
 from datetime import date, datetime
 import plotly.express as px
 import plotly.graph_objects as go
+import google.generativeai as genai
+from io import StringIO
 
 st.set_page_config(page_title="Diario de comidas", layout="centered")
 
@@ -12,91 +14,99 @@ REPO = "teresamattil/registro_salud"
 FILE = "comidas.csv"
 API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE}"
 TOKEN = st.secrets["GITHUB_TOKEN"]
+GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
 HEADERS = {"Authorization": f"token {TOKEN}"}
 objetivo = 2000
+
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel("gemini-1.5-pro")
 
 @st.cache_data(ttl=60)
 def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
     if "content" not in r:
-        return pd.DataFrame(
-            columns=["Fecha", "hora", "comida", "ruta_foto", "calorías_estimadas"]
-        )
+        return pd.DataFrame(columns=["Fecha","hora","comida","ruta_foto","calorías_estimadas"])
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
 
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
-# ---------------- NAVEGADOR ----------------
-pagina = st.radio(
-    "Navegación",
-    ["📅 Resumen diario", "📈 Evolución"],
-    horizontal=True
-)
+pagina = st.radio("Navegación", ["📅 Resumen diario", "📈 Evolución"], horizontal=True)
 
-# ================= PÁGINA 1 =================
 if pagina == "📅 Resumen diario":
     st.title("🍽️ Diario de comidas")
 
     if "dia_seleccionado" not in st.session_state:
         st.session_state.dia_seleccionado = date.today()
 
-    dia = st.date_input(
-        "Día",
-        st.session_state.dia_seleccionado,
-        key="dia_selector"
-    )
+    dia = st.date_input("Día", st.session_state.dia_seleccionado)
     st.session_state.dia_seleccionado = dia
 
-    cols_resumen = ["Fecha", "hora", "comida", "calorías_estimadas"]
-    st.dataframe(
-        df[df["Fecha"] == dia][cols_resumen],
-        use_container_width=True
-    )
+    cols_resumen = ["Fecha","hora","comida","calorías_estimadas"]
+    st.dataframe(df[df["Fecha"] == dia][cols_resumen], use_container_width=True)
 
-    if "mostrar_grafico" not in st.session_state:
-        st.session_state.mostrar_grafico = False
-
-    col1, col2 = st.columns([3, 1])
-
+    col1, col2 = st.columns([3,1])
     with col1:
         st.button("Ver calorías del día", disabled=True)
-
     with col2:
         if st.button("Estimar calorías"):
-            pendientes = df[df["calorías_estimadas"] == 0.0]
-            st.write(f"Filas sin calorías estimadas: {len(pendientes)}")
+            pendientes = df[df["calorías_estimadas"] == 0.0].copy()
 
+            if pendientes.empty:
+                st.info("No hay filas pendientes")
+                st.stop()
 
-    if st.session_state.mostrar_grafico:
+            csv_text = pendientes.rename(columns={
+                "Fecha":"fecha",
+                "hora":"hora",
+                "comida":"descripcion",
+                "ruta_foto":"",
+                "calorías_estimadas":"calorias"
+            })[["fecha","hora","descripcion","","calorias"]].to_csv(index=False)
 
-        consumidas = df[df["Fecha"] == dia]["calorías_estimadas"].sum()
-        restantes = max(objetivo - consumidas, 0)
+            prompt = f"""
+ROL:
+Eres un asistente nutricional especializado en estimación calórica de alimentos consumidos en registros diarios.
 
-        fig = go.Figure(
-            data=[go.Pie(
-                values=[consumidas, restantes],
-                labels=["Consumidas", "Restantes"],
-                hole=0.7,
-                textinfo="none"
-            )]
-        )
+OBJETIVO:
+Rellenar la última columna de un registro de comidas con una estimación realista de calorías por ítem, basándote en raciones habituales en España. Solo debes modificar los valores que estén a 0 o 0.0.
 
-        fig.add_annotation(
-            text=f"{int(consumidas)} kcal",
-            x=0.5,
-            y=0.5,
-            font_size=24,
-            showarrow=False
-        )
+FORMATO DEL TEXTO DE ENTRADA:
+{csv_text}
 
-        fig.update_layout(
-            title=f"Calorías del día ({consumidas} / {objetivo})",
-            margin=dict(t=50, b=0, l=0, r=0)
-        )
+FORMATO DEL TEXTO DE SALIDA:
+El mismo texto en formato CSV, respetando exactamente las columnas y el orden, pero sustituyendo el valor de calorías por la estimación correspondiente.
+No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de código CSV.
+"""
 
-        st.plotly_chart(fig, use_container_width=True)
+            response = model.generate_content(prompt)
+            csv_out = response.text.strip()
+
+            df_est = pd.read_csv(StringIO(csv_out))
+            df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
+            df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
+
+            df.update(df_est)
+
+            r_api = requests.get(API_URL, headers=HEADERS).json()
+            sha = r_api["sha"]
+
+            csv_final = df.to_csv(index=False)
+            content = base64.b64encode(csv_final.encode()).decode()
+
+            requests.put(
+                API_URL,
+                headers=HEADERS,
+                json={
+                    "message": "Estimar calorías automáticamente",
+                    "content": content,
+                    "sha": sha
+                }
+            )
+
+            st.cache_data.clear()
+            st.rerun()
 
     st.divider()
 
@@ -105,13 +115,7 @@ if pagina == "📅 Resumen diario":
 
     with st.form("add_food"):
         f = st.date_input("Fecha", st.session_state.dia_seleccionado)
-
-        h = st.time_input(
-            "Hora",
-            st.session_state.hora_seleccionada,
-            key="hora_input"
-        )
-
+        h = st.time_input("Hora", st.session_state.hora_seleccionada)
         c = st.text_input("Comida")
         r = st.text_input("Ruta foto")
         k = st.number_input("Calorías estimadas", min_value=0)
@@ -119,14 +123,8 @@ if pagina == "📅 Resumen diario":
 
     if submit:
         st.session_state.hora_seleccionada = h
-
-        r_api = requests.get(API_URL, headers=HEADERS)
-
-        if r_api.status_code != 200:
-            st.error(f"Error GitHub: {r_api.json().get('message')}")
-            st.stop()
-
-        sha = r_api.json()["sha"]
+        r_api = requests.get(API_URL, headers=HEADERS).json()
+        sha = r_api["sha"]
 
         new_row = {
             "Fecha": f,
@@ -137,7 +135,6 @@ if pagina == "📅 Resumen diario":
         }
 
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-
         csv = df.to_csv(index=False)
         content = base64.b64encode(csv.encode()).decode()
 
@@ -154,15 +151,10 @@ if pagina == "📅 Resumen diario":
         st.cache_data.clear()
         st.rerun()
 
-# ================= PÁGINA 2 =================
 if pagina == "📈 Evolución":
     st.title("Evolución de calorías")
 
-    df_daily = (
-        df.groupby("Fecha", as_index=False)["calorías_estimadas"]
-        .sum()
-        .sort_values("Fecha")
-    )
+    df_daily = df.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
 
     vista = st.radio(
         "Vista",
@@ -174,91 +166,35 @@ if pagina == "📈 Evolución":
         ultimo_mes = date.today().replace(day=1)
         df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes]
 
-        fig = px.line(
-            df_plot,
-            x="Fecha",
-            y="calorías_estimadas",
-            markers=True,
-            title="Calorías diarias (último mes)"
-        )
-
-        fig.add_hline(
-            y=objetivo,
-            line_dash="dash",
-            line_color="orange",
-            annotation_text="Objetivo",
-            annotation_position="top left"
-        )
-
+        fig = px.line(df_plot, x="Fecha", y="calorías_estimadas", markers=True)
+        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
         st.plotly_chart(fig, use_container_width=True)
 
     elif vista == "Rango personalizado":
-        col1, col2 = st.columns(2) 
+        col1, col2 = st.columns(2)
         with col1:
-            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min()) 
+            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
         with col2:
-            fin = st.date_input("Fecha fin", df_daily["Fecha"].max()) 
+            fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
 
-        df_plot = df_daily[
-            (df_daily["Fecha"] >= inicio) & (df_daily["Fecha"] <= fin)
-        ].copy()
-
-        # Añadir las columnas necesarias
+        df_plot = df_daily[(df_daily["Fecha"]>=inicio)&(df_daily["Fecha"]<=fin)].copy()
         df_plot["Hasta_objetivo"] = df_plot["calorías_estimadas"].clip(upper=objetivo)
-        df_plot["Exceso"] = (df_plot["calorías_estimadas"] - objetivo).clip(lower=0)
+        df_plot["Exceso"] = (df_plot["calorías_estimadas"]-objetivo).clip(lower=0)
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=df_plot["Fecha"],
-            y=df_plot["Hasta_objetivo"],
-            name="Hasta objetivo",
-            marker_color="#115a8e"
-        ))
-
-        fig.add_trace(go.Bar(
-            x=df_plot["Fecha"],
-            y=df_plot["Exceso"],
-            name="Exceso",
-            marker_color="#d93725"
-        ))
-
-        fig.update_layout(
-            barmode="stack",
-            title="Calorías diarias (rango personalizado)",
-        )
-
+        fig.add_bar(x=df_plot["Fecha"], y=df_plot["Hasta_objetivo"], marker_color="#115a8e", name="Hasta objetivo")
+        fig.add_bar(x=df_plot["Fecha"], y=df_plot["Exceso"], marker_color="#d93725", name="Exceso")
+        fig.update_layout(barmode="stack")
         st.plotly_chart(fig, use_container_width=True)
 
-
-
-
     else:
-        df_monthly = df.copy()
-        df_monthly["Año"] = pd.to_datetime(df_monthly["Fecha"]).dt.year
-        df_monthly["Mes"] = pd.to_datetime(df_monthly["Fecha"]).dt.month
+        df_m = df.copy()
+        df_m["Año"] = pd.to_datetime(df_m["Fecha"]).dt.year
+        df_m["Mes"] = pd.to_datetime(df_m["Fecha"]).dt.month
 
-        df_avg = (
-            df_monthly.groupby(["Año", "Mes"])["calorías_estimadas"]
-            .mean()
-            .reset_index()
-        )
+        df_avg = df_m.groupby(["Año","Mes"])["calorías_estimadas"].mean().reset_index()
+        df_avg["Periodo"] = df_avg["Año"].astype(str)+"-"+df_avg["Mes"].astype(str)
 
-        df_avg["Periodo"] = df_avg["Año"].astype(str) + "-" + df_avg["Mes"].astype(str)
-
-        fig = px.line(
-            df_avg,
-            x="Periodo",
-            y="calorías_estimadas",
-            markers=True,
-            title="Media diaria mensual (visión anual)"
-        )
-
-        fig.add_hline(
-            y=objetivo,
-            line_dash="dash",
-            line_color="orange",
-            annotation_text="Objetivo",
-            annotation_position="top left"
-        )
-
+        fig = px.line(df_avg, x="Periodo", y="calorías_estimadas", markers=True)
+        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
         st.plotly_chart(fig, use_container_width=True)
