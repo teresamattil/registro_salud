@@ -17,7 +17,7 @@ API_URL = f"https://api.github.com/repos/{REPO}/contents/{FILE}"
 TOKEN = st.secrets["GITHUB_TOKEN"]
 GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
 HEADERS = {"Authorization": f"token {TOKEN}"}
-objetivo = 2000
+objetivo = 1500  # Calorías diarias objetivo
 
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel("gemini-3-flash-preview")
@@ -36,7 +36,7 @@ df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 # ---------------- MENU VISUAL ----------------
 if "pagina" not in st.session_state:
     st.session_state.pagina = "Resumen diario"
-
+"""
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("📅 Resumen diario"):
@@ -47,6 +47,17 @@ with col2:
 with col3:
     if st.button("⚡ Estimar calorías"):
         st.session_state.pagina = "Estimación"
+"""
+
+with st.sidebar:
+    pagina = option_menu(
+        menu_title="Menú",
+        options=["Resumen diario", "Evolución", "Estimación"],
+        icons=["calendar-check", "graph-up", "lightning-fill"],
+        menu_icon="cast",
+        default_index=0,
+        orientation="horizontal"
+    )
 
 pagina = st.session_state.pagina
 
