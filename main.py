@@ -52,10 +52,10 @@ if pagina == "📅 Resumen diario":
     with col2:
         if st.button("Estimar calorías"):
             pendientes = df[df["calorías_estimadas"] == 0.0].copy()
-
             if pendientes.empty:
                 st.info("No hay filas pendientes")
                 st.stop()
+            st.write(f"Filas sin calorías estimadas: {len(pendientes)}")
 
             csv_text = pendientes.rename(columns={
                 "Fecha":"fecha",
@@ -64,7 +64,7 @@ if pagina == "📅 Resumen diario":
                 "ruta_foto":"",
                 "calorías_estimadas":"calorias"
             })[["fecha","hora","descripcion","","calorias"]].to_csv(index=False)
-
+            st.write(f"prompt: {csv_text}")
             prompt = f"""
 ROL:
 Eres un asistente nutricional especializado en estimación calórica de alimentos consumidos en registros diarios.
@@ -86,6 +86,15 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
             df_est = pd.read_csv(StringIO(csv_out))
             df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
             df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
+            
+            if df_est.shape[1] != 5:
+                st.error(f"Gemini devolvió {df_est.shape[1]} columnas, se esperaban 5")
+                st.write("Respuesta completa de Gemini:")
+                st.code(csv_out)
+                st.stop()
+
+            df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
+
 
             df.update(df_est)
 
