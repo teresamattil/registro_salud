@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import google.generativeai as genai
 from io import StringIO
 import re
+from streamlit_option_menu import option_menu
 
 st.set_page_config(page_title="Diario de comidas", layout="wide")
 
