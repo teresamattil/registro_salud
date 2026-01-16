@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
 from io import StringIO
+import re
 
 st.set_page_config(page_title="Diario de comidas", layout="centered")
 
@@ -81,10 +82,18 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
 """
 
             response = model.generate_content(prompt)
+            raw = response.text.strip()
+
+            # Quitar fences ``` si existen
+            raw = re.sub(r"^```.*?\n|\n```$", "", raw, flags=re.DOTALL).strip()
             csv_out = response.text.strip()
 
-            df_est = pd.read_csv(StringIO(csv_out), header=None)
-
+            df_est = pd.read_csv(
+                StringIO(raw),
+                engine="python",
+                sep=",",
+                header=0
+            )
             if df_est.shape[1] != 5:
                 st.error(f"Gemini devolvió {df_est.shape[1]} columnas, se esperaban 5")
                 st.code(csv_out)
