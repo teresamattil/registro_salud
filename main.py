@@ -60,8 +60,17 @@ if pagina == "Resumen diario":
     dia = st.date_input("Día", st.session_state.dia_seleccionado)
     st.session_state.dia_seleccionado = dia
 
+    # Calorías consumidas ese día
+    df_dia = df[df["Fecha"] == dia]
+    consumidas = df_dia["calorías_estimadas"].sum()
+    porcentaje = min(consumidas / objetivo, 1.0)
+
+    # Barra de progreso con data label
+    st.markdown(f"**Calorías consumidas:** {consumidas} / {objetivo} kcal")
+    st.progress(porcentaje)
+
     st.dataframe(
-        df[df["Fecha"] == dia][["Fecha","hora","comida","calorías_estimadas"]],
+        df_dia[["Fecha","hora","comida","calorías_estimadas"]],
         use_container_width=True
     )
 
