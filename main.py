@@ -65,7 +65,7 @@ if pagina == "📅 Resumen diario":
                 "ruta_foto":"",
                 "calorías_estimadas":"calorias"
             })[["fecha","hora","descripcion","","calorias"]].to_csv(index=False)
-            st.write(f"prompt: {csv_text}")
+            
             prompt = f"""
 ROL:
 Eres un asistente nutricional especializado en estimación calórica de alimentos consumidos en registros diarios.
@@ -94,9 +94,8 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
                 sep=",",
                 header=0
             )
-            if df_est.shape[1] != 5:
+            if df_est.shape[1] != 5: #control errores gemini
                 st.error(f"Gemini devolvió {df_est.shape[1]} columnas, se esperaban 5")
-                st.code(csv_out)
                 st.stop()
 
             df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
