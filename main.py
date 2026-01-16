@@ -44,8 +44,10 @@ if pagina == "📅 Resumen diario":
     dia = st.date_input("Día", st.session_state.dia_seleccionado)
     st.session_state.dia_seleccionado = dia
 
-    cols_resumen = ["Fecha","hora","comida","calorías_estimadas"]
-    st.dataframe(df[df["Fecha"] == dia][cols_resumen], use_container_width=True)
+    st.dataframe(
+        df[df["Fecha"] == dia][["Fecha","hora","comida","calorías_estimadas"]],
+        use_container_width=True
+    )
 
     col1, col2 = st.columns([3,1])
     with col1:
@@ -56,16 +58,14 @@ if pagina == "📅 Resumen diario":
             if pendientes.empty:
                 st.info("No hay filas pendientes")
                 st.stop()
-            st.write(f"Filas sin calorías estimadas: {len(pendientes)}")
 
             csv_text = pendientes.rename(columns={
                 "Fecha":"fecha",
                 "hora":"hora",
                 "comida":"descripcion",
-                "ruta_foto":"",
                 "calorías_estimadas":"calorias"
-            })[["fecha","hora","descripcion","","calorias"]].to_csv(index=False)
-            
+            })[["fecha","hora","descripcion","calorias"]].to_csv(index=False)
+
             prompt = f"""
 ROL:
 Eres un asistente nutricional especializado en estimación calórica de alimentos consumidos en registros diarios.
@@ -82,26 +82,26 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
 """
 
             response = model.generate_content(prompt)
-            raw = response.text.strip()
+            raw = re.sub(r"^```.*?\n|\n```$", "", response.text.strip(), flags=re.DOTALL)
 
-            # Quitar fences ``` si existen
-            raw = re.sub(r"^```.*?\n|\n```$", "", raw, flags=re.DOTALL).strip()
-            csv_out = response.text.strip()
-
-            df_est = pd.read_csv(
-                StringIO(raw),
-                engine="python",
-                sep=",",
-                header=0
-            )
-            if df_est.shape[1] != 5: #control errores gemini
-                st.error(f"Gemini devolvió {df_est.shape[1]} columnas, se esperaban 5")
-                st.stop()
-
-            df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
+            df_est = pd.read_csv(StringIO(raw))
+            df_est.columns = ["Fecha","hora","comida","calorías_estimadas"]
             df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
 
-            df.update(df_est)
+            keys = ["Fecha","hora","comida"]
+
+            df = df.merge(
+                df_est[keys + ["calorías_estimadas"]],
+                on=keys,
+                how="left",
+                suffixes=("", "_new")
+            )
+
+            df["calorías_estimadas"] = df["calorías_estimadas_new"].fillna(
+                df["calorías_estimadas"]
+            )
+
+            df = df.drop(columns=["calorías_estimadas_new"])
 
             r_api = requests.get(API_URL, headers=HEADERS).json()
             sha = r_api["sha"]
@@ -137,6 +137,7 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
 
     if submit:
         st.session_state.hora_seleccionada = h
+
         r_api = requests.get(API_URL, headers=HEADERS).json()
         sha = r_api["sha"]
 
@@ -149,6 +150,7 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
         }
 
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
         csv = df.to_csv(index=False)
         content = base64.b64encode(csv.encode()).decode()
 
