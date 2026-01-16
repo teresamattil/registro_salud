@@ -38,15 +38,15 @@ df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 #if "pagina" not in st.session_state:
 #   st.session_state.pagina = "Resumen diario"
 
-with st.sidebar:
-    pagina = option_menu(
-        menu_title=None,
-        options=["Resumen diario", "Evolución", "Estimación"],
-        icons=["calendar-check", "graph-up", "lightning-fill"],
-        menu_icon="cast",
-        default_index=0,
-        orientation="horizontal"
-    )
+
+pagina = option_menu(
+    menu_title=None,
+    options=["Resumen diario", "Evolución", "Estimación"],
+    icons=["calendar-check", "graph-up", "lightning-fill"],
+    menu_icon="cast",
+    default_index=0,
+    orientation="horizontal"
+)
 
 #pagina = st.session_state.pagina
 
