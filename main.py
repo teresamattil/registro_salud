@@ -120,8 +120,13 @@ if pagina == "📅 Resumen diario":
     if submit:
         st.session_state.hora_seleccionada = h
 
-        r_api = requests.get(API_URL, headers=HEADERS).json()
-        sha = r_api["sha"]
+        r_api = requests.get(API_URL, headers=HEADERS)
+
+        if r_api.status_code != 200:
+            st.error(f"Error GitHub: {r_api.json().get('message')}")
+            st.stop()
+
+        sha = r_api.json()["sha"]
 
         new_row = {
             "Fecha": f,
