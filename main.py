@@ -83,18 +83,15 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
             response = model.generate_content(prompt)
             csv_out = response.text.strip()
 
-            df_est = pd.read_csv(StringIO(csv_out))
-            df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
-            df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
-            
+            df_est = pd.read_csv(StringIO(csv_out), header=None)
+
             if df_est.shape[1] != 5:
                 st.error(f"Gemini devolvió {df_est.shape[1]} columnas, se esperaban 5")
-                st.write("Respuesta completa de Gemini:")
                 st.code(csv_out)
                 st.stop()
 
             df_est.columns = ["Fecha","hora","comida","ruta_foto","calorías_estimadas"]
-
+            df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
 
             df.update(df_est)
 
