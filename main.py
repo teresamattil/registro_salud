@@ -19,7 +19,7 @@ HEADERS = {"Authorization": f"token {TOKEN}"}
 objetivo = 2000
 
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 @st.cache_data(ttl=60)
 def load_data():
