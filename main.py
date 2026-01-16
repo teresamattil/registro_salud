@@ -35,24 +35,12 @@ df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 # ---------------- MENU VISUAL ----------------
-if "pagina" not in st.session_state:
-    st.session_state.pagina = "Resumen diario"
-"""
-col1, col2, col3 = st.columns(3)
-with col1:
-    if st.button("📅 Resumen diario"):
-        st.session_state.pagina = "Resumen diario"
-with col2:
-    if st.button("📈 Evolución"):
-        st.session_state.pagina = "Evolución"
-with col3:
-    if st.button("⚡ Estimar calorías"):
-        st.session_state.pagina = "Estimación"
-"""
+#if "pagina" not in st.session_state:
+#   st.session_state.pagina = "Resumen diario"
 
 with st.sidebar:
     pagina = option_menu(
-        menu_title="Menú",
+        menu_title=None,
         options=["Resumen diario", "Evolución", "Estimación"],
         icons=["calendar-check", "graph-up", "lightning-fill"],
         menu_icon="cast",
@@ -60,7 +48,7 @@ with st.sidebar:
         orientation="horizontal"
     )
 
-pagina = st.session_state.pagina
+#pagina = st.session_state.pagina
 
 # ---------------- PÁGINA 1 ----------------
 if pagina == "Resumen diario":
