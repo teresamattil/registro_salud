@@ -161,6 +161,7 @@ elif pagina == "Estimación":
         st.stop()
 
     st.write(f"Filas pendientes: {len(pendientes)}")
+    st.dataframe(pendientes[["Fecha","hora","comida","ruta_foto","calorías_estimadas"]], use_container_width=True)
     
     csv_text = pendientes.rename(columns={
         "Fecha":"fecha",
