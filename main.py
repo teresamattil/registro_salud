@@ -35,9 +35,6 @@ df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 # ---------------- MENU VISUAL ----------------
-#if "pagina" not in st.session_state:
-#   st.session_state.pagina = "Resumen diario"
-
 
 pagina = option_menu(
     menu_title=None,
@@ -47,8 +44,6 @@ pagina = option_menu(
     default_index=0,
     orientation="horizontal"
 )
-
-#pagina = st.session_state.pagina
 
 # ---------------- PÁGINA 1 ----------------
 if pagina == "Resumen diario":
@@ -60,20 +55,54 @@ if pagina == "Resumen diario":
     dia = st.date_input("Día", st.session_state.dia_seleccionado)
     st.session_state.dia_seleccionado = dia
 
-    # Calorías consumidas ese día
-    df_dia = df[df["Fecha"] == dia]
+    # Datos del día
+    df_dia = df[df["Fecha"] == dia].copy()
     consumidas = df_dia["calorías_estimadas"].sum()
     porcentaje = min(consumidas / objetivo, 1.0)
 
-    # Barra de progreso con data label
     st.markdown(f"**Calorías consumidas:** {consumidas} / {objetivo} kcal")
     st.progress(porcentaje)
 
-    st.dataframe(
-        df_dia[["Fecha","hora","comida","calorías_estimadas"]],
-        use_container_width=True
+    # Tabla editable con checkbox para borrar
+    df_edit = df_dia[["Fecha", "hora", "comida", "calorías_estimadas"]].copy()
+    df_edit.insert(0, "Borrar", False)
+
+    edited = st.data_editor(
+        df_edit,
+        use_container_width=True,
+        num_rows="fixed",
+        key="editor_dia"
     )
 
+    if st.button("Editar (borrar seleccionados)"):
+        idx_borrar = edited[edited["Borrar"]].index
+        if len(idx_borrar) == 0:
+            st.info("No has seleccionado ninguna fila")
+            st.stop()
+
+        # Eliminar del dataframe global usando los índices reales
+        df = df.drop(idx_borrar)
+
+        r_api = requests.get(API_URL, headers=HEADERS).json()
+        sha = r_api["sha"]
+
+        csv = df.to_csv(index=False)
+        content = base64.b64encode(csv.encode()).decode()
+
+        requests.put(
+            API_URL,
+            headers=HEADERS,
+            json={
+                "message": "Borrar comidas",
+                "content": content,
+                "sha": sha
+            }
+        )
+
+        st.cache_data.clear()
+        st.rerun()
+
+    # ---- Añadir comida ----
     if "hora_seleccionada" not in st.session_state:
         st.session_state.hora_seleccionada = datetime.utcnow().time()
 
@@ -99,13 +128,18 @@ if pagina == "Resumen diario":
         }
 
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
         csv = df.to_csv(index=False)
         content = base64.b64encode(csv.encode()).decode()
 
         requests.put(
             API_URL,
             headers=HEADERS,
-            json={"message": "Añadir comida","content": content,"sha": sha}
+            json={
+                "message": "Añadir comida",
+                "content": content,
+                "sha": sha
+            }
         )
 
         st.cache_data.clear()
