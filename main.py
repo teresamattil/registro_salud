@@ -158,12 +158,23 @@ elif pagina == "Evolución":
     )
 
     if vista == "Último mes (diario)":
-        ultimo_mes = date.today().replace(day=1)
-        df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes]
+        ultimo_mes = date.today() - pd.Timedelta(days=30)
+        df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes].copy()
 
-        fig = px.line(df_plot, x="Fecha", y="calorías_estimadas", markers=True)
+        dias = ["L", "M", "X", "J", "V", "S", "D"]
+        df_plot["Etiqueta"] = (
+            df_plot["Fecha"].apply(lambda d: f"{dias[d.weekday()]} {d.day}")
+        )
+
+        fig = px.line(
+            df_plot,
+            x="Etiqueta",
+            y="calorías_estimadas",
+            markers=True
+        )
         fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
         st.plotly_chart(fig, use_container_width=True)
+
 
     elif vista == "Rango personalizado":
         col1, col2 = st.columns(2)
