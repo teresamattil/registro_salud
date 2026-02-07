@@ -195,15 +195,30 @@ elif pagina == "Evolución":
 
     else:
         df_m = df.copy()
-        df_m["Año"] = pd.to_datetime(df_m["Fecha"]).dt.year
-        df_m["Mes"] = pd.to_datetime(df_m["Fecha"]).dt.month
+        df_m["Fecha"] = pd.to_datetime(df_m["Fecha"])
 
-        df_avg = df_m.groupby(["Año","Mes"])["calorías_estimadas"].mean().reset_index()
-        df_avg["Periodo"] = df_avg["Año"].astype(str)+"-"+df_avg["Mes"].astype(str)
+        # Suma diaria
+        df_diario = (
+            df_m.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
+        )
+
+        # Año y mes desde la fecha diaria
+        df_diario["Año"] = df_diario["Fecha"].dt.year
+        df_diario["Mes"] = df_diario["Fecha"].dt.month
+
+        # Media mensual de calorías diarias
+        df_avg = (
+            df_diario
+            .groupby(["Año", "Mes"], as_index=False)["calorías_estimadas"]
+            .mean()
+        )
+
+        df_avg["Periodo"] = df_avg["Año"].astype(str) + "-" + df_avg["Mes"].astype(str)
 
         fig = px.line(df_avg, x="Periodo", y="calorías_estimadas", markers=True)
         fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
         st.plotly_chart(fig, use_container_width=True)
+
 
 # ---------------- PÁGINA 3 ----------------
 elif pagina == "Estimación":
