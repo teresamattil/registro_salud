@@ -202,22 +202,32 @@ elif pagina == "Evolución":
             df_m.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
         )
 
-        # Año y mes desde la fecha diaria
+        # Año, mes y quincena
         df_diario["Año"] = df_diario["Fecha"].dt.year
         df_diario["Mes"] = df_diario["Fecha"].dt.month
+        df_diario["Quincena"] = df_diario["Fecha"].dt.day.apply(
+            lambda d: 1 if d <= 15 else 2
+        )
 
-        # Media mensual de calorías diarias
+        # Media quincenal de calorías diarias
         df_avg = (
             df_diario
-            .groupby(["Año", "Mes"], as_index=False)["calorías_estimadas"]
+            .groupby(["Año", "Mes", "Quincena"], as_index=False)["calorías_estimadas"]
             .mean()
         )
 
-        df_avg["Periodo"] = df_avg["Año"].astype(str) + "-" + df_avg["Mes"].astype(str)
+        df_avg["Periodo"] = (
+            df_avg["Año"].astype(str)
+            + "-"
+            + df_avg["Mes"].astype(str)
+            + " Q"
+            + df_avg["Quincena"].astype(str)
+        )
 
         fig = px.line(df_avg, x="Periodo", y="calorías_estimadas", markers=True)
         fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
         st.plotly_chart(fig, use_container_width=True)
+
 
 
 # ---------------- PÁGINA 3 ----------------
