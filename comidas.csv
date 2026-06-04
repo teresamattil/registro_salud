@@ -749,7 +749,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas
 2026-05-30,07:30,Cafe con leche,,50.0
 2026-05-30,10:00,Cafe con leche y azucar,,70.0
 2026-05-30,16:00,Ensalada de pasta,,450.0
-2026-05-30,16:00,dos coca colas zero,,0.0
+2026-05-30,16:00,dos coca colas zero,,2.0
 2026-05-30,17:15,cerveza 25 cl,,105.0
 2026-05-30,23:00,cerveza,,145.0
 2026-05-30,23:00,picoteo aceitunas y cebolletas ,,75.0
@@ -759,16 +759,16 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas
 2026-05-29,16:00,vaso de gazpacho ,,85.0
 2026-05-29,21:00,dos paninins de queso tomate y pavo al horno,,580.0
 2026-06-02,14:30,brick de gazpacho 25 cl,,135.0
-2026-06-02,11:30,platano,,0.0
-2026-06-02,11:30,Cafe con leche ,,0.0
-2026-06-04,14:45,Sandwich de pollo al curry y queso,,0.0
-2026-06-04,12:30,Puñado de picos,,0.0
-2026-06-04,18:00,Puñado de picos,,0.0
-2026-06-03,08:00,Cafe con leche,,0.0
-2026-06-03,08:00,Tostada de aceite y pavo,,0.0
-2026-06-03,11:45,Cafe con leche pequeño,,0.0
-2026-06-03,11:45,Platano,,0.0
-2026-06-03,15:00,Plato pequeño de arroz con pollo al curry,,0.0
-2026-06-03,20:00,Tostada de salsa al curry,,0.0
-2026-06-03,20:45,Sandwich de salsa al curry con pavo y queso,,0.0
-2026-06-02,20:45,Tostada vegetal (maiz atun lechuga mayonesa),,0.0
+2026-06-02,11:30,platano,,95.0
+2026-06-02,11:30,Cafe con leche ,,65.0
+2026-06-04,14:45,Sandwich de pollo al curry y queso,,380.0
+2026-06-04,12:30,Puñado de picos,,110.0
+2026-06-04,18:00,Puñado de picos,,110.0
+2026-06-03,08:00,Cafe con leche,,65.0
+2026-06-03,08:00,Tostada de aceite y pavo,,240.0
+2026-06-03,11:45,Cafe con leche pequeño,,45.0
+2026-06-03,11:45,Platano,,95.0
+2026-06-03,15:00,Plato pequeño de arroz con pollo al curry,,350.0
+2026-06-03,20:00,Tostada de salsa al curry,,170.0
+2026-06-03,20:45,Sandwich de salsa al curry con pavo y queso,,330.0
+2026-06-02,20:45,Tostada vegetal (maiz atun lechuga mayonesa),,290.0
