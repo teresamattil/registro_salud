@@ -28,9 +28,14 @@ model = genai.GenerativeModel("gemini-3-flash-preview")
 def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
     if "content" not in r:
-        return pd.DataFrame(columns=["Fecha","hora","comida","calorías_estimadas"])
+        return pd.DataFrame(columns=["Fecha","hora","comida","ruta_foto","calorías_estimadas",
+                                      "carbohidratos_g","proteinas_g","sodio_nivel"])
     content = base64.b64decode(r["content"])
-    return pd.read_csv(pd.io.common.BytesIO(content))
+    d = pd.read_csv(pd.io.common.BytesIO(content))
+    for col in ["carbohidratos_g", "proteinas_g", "sodio_nivel"]:
+        if col not in d.columns:
+            d[col] = pd.NA
+    return d
 
 def save_data(df, message):
     r_api = requests.get(API_URL, headers=HEADERS).json()
@@ -323,49 +328,50 @@ elif pagina == "Estimación":
 
     st.write(f"Filas pendientes: {len(pendientes)}")
     st.dataframe(pendientes[["Fecha","hora","comida","calorías_estimadas"]], use_container_width=True)
-    
+
     csv_text = pendientes.rename(columns={
-        "Fecha":"fecha",
-        "hora":"hora",
-        "comida":"descripcion",
-        "calorías_estimadas":"calorias"
+        "Fecha":"fecha","hora":"hora","comida":"descripcion","calorías_estimadas":"calorias"
     })[["fecha","hora","descripcion","calorias"]].to_csv(index=False)
 
     prompt = f"""
-ROL:
-Eres un asistente nutricional especializado en estimación calórica de alimentos consumidos en registros diarios.
+ROL: Eres un asistente nutricional especializado en estimación de alimentos consumidos en España.
 
-OBJETIVO:
-Rellenar la última columna de un registro de comidas con una estimación realista de calorías por ítem, basándote en raciones habituales en España. Solo debes modificar los valores que estén a 0 o 0.0.
+OBJETIVO: Para los ítems con calorias=0.0, estima simultáneamente calorías y macronutrientes.
 
-FORMATO DEL TEXTO DE ENTRADA:
+CAMPOS A ESTIMAR (solo donde calorias=0.0):
+- calorias: kilocalorías totales de la porción
+- carbohidratos_g: carbohidratos totales en gramos
+- proteinas_g: proteínas en gramos
+- sodio_nivel: "bajo" / "medio" / "alto"
+  * bajo: <300mg sodio (frutas, verduras, café, pollo plancha, yogur, pescado fresco)
+  * medio: 300-700mg (pan, queso fresco, huevos, plato casero normal, legumbres)
+  * alto: >700mg (embutidos, jamón, quesos curados, patatas de bolsa, fast food, pizza, restaurante, precocinados, soja, aperitivos)
+
+FORMATO ENTRADA:
 {csv_text}
 
-FORMATO DEL TEXTO DE SALIDA:
-El mismo texto en formato CSV, respetando exactamente las columnas y el orden, pero sustituyendo el valor de calorías por la estimación correspondiente.
-No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de código CSV.
+FORMATO SALIDA: CSV con columnas: fecha,hora,descripcion,calorias,carbohidratos_g,proteinas_g,sodio_nivel
+Sin texto adicional. Solo el CSV.
 """
 
     if st.button("Ejecutar estimación"):
         response = model.generate_content(prompt)
         raw = re.sub(r"^```.*?\n|\n```$", "", response.text.strip(), flags=re.DOTALL)
-
         df_est = pd.read_csv(StringIO(raw))
-        df_est.columns = ["Fecha","hora","comida","calorías_estimadas"]
+        df_est.columns = ["Fecha","hora","comida","calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]
         df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
-
+        df_est["carbohidratos_g"] = pd.to_numeric(df_est["carbohidratos_g"], errors="coerce")
+        df_est["proteinas_g"] = pd.to_numeric(df_est["proteinas_g"], errors="coerce")
         keys = ["Fecha","hora","comida"]
         df = df.merge(
-            df_est[keys + ["calorías_estimadas"]],
-            on=keys,
-            how="left",
-            suffixes=("", "_new")
+            df_est[keys + ["calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]],
+            on=keys, how="left", suffixes=("","_new")
         )
         df["calorías_estimadas"] = df["calorías_estimadas_new"].fillna(df["calorías_estimadas"])
-        df = df.drop(columns=["calorías_estimadas_new"])
-
-        save_data(df, "Estimar calorías automáticamente")
-
+        for col in ["carbohidratos_g","proteinas_g","sodio_nivel"]:
+            df[col] = df[col+"_new"].combine_first(df[col])
+        df = df.drop(columns=[c for c in df.columns if c.endswith("_new")])
+        save_data(df, "Estimar calorías y macros")
         st.cache_data.clear()
         st.success("Estimación completada")
         st.rerun()
@@ -396,10 +402,18 @@ elif pagina == "Modelo de peso":
     _df = df.copy()
     _df["_alc"] = _df["comida"].str.lower().apply(lambda x: any(k in str(x) for k in _alc_kw))
     _df["_kcal_alc"] = _df["calorías_estimadas"].where(_df["_alc"], 0.0)
+    _df["_carbs"] = pd.to_numeric(_df.get("carbohidratos_g", pd.Series(dtype=float)), errors="coerce")
+    _df["_sodio_alto"] = (_df.get("sodio_nivel", pd.Series(dtype=str)) == "alto").astype(float)
+    _df["_sodio_valido"] = (_df.get("sodio_nivel", pd.Series(dtype=str)).notna() &
+                            (_df.get("sodio_nivel", pd.Series(dtype=str)) != "")).astype(float)
     df_food = _df.groupby("Fecha").agg(
         kcal_total=("calorías_estimadas", "sum"),
-        kcal_alcohol=("_kcal_alc", "sum")
+        kcal_alcohol=("_kcal_alc", "sum"),
+        carbs_total=("_carbs", "sum"),
+        sodio_alto_n=("_sodio_alto", "sum"),
+        sodio_n=("_sodio_valido", "sum"),
     ).reset_index()
+    df_food["sodio_alto_frac"] = df_food["sodio_alto_n"] / df_food["sodio_n"].replace(0, np.nan)
 
     # ---- Tabla diaria maestra ----
     df_e = df_basal.merge(df_activo, on="Fecha", how="outer")
@@ -438,6 +452,8 @@ elif pagina == "Modelo de peso":
             "delta_dia": (r2["peso_kg"] - r1["peso_kg"]) / gap,
             "superavit_medio": food_rows["superavit"].mean() if not food_rows.empty else np.nan,
             "alcohol_medio":   food_rows["kcal_alcohol"].mean() if not food_rows.empty else 0.0,
+            "carbs_medio":     food_rows["carbs_total"].mean() if not food_rows.empty else np.nan,
+            "sodio_alto_frac": food_rows["sodio_alto_frac"].mean() if not food_rows.empty else np.nan,
             "activo_medio":    period["activo_kcal"].mean(),
             "sueño_medio":     period["horas_cama"].mean(),
             "es_lutea":        period["es_lutea"].mean(),
@@ -462,6 +478,12 @@ elif pagina == "Modelo de peso":
     if n_sueño >= 10:
         df_obs["sueño_medio"] = df_obs["sueño_medio"].fillna(df_obs["sueño_medio"].median())
         FEAT["sueño_medio"] = "Horas en cama (media del período)"
+    n_carbs = df_obs["carbs_medio"].notna().sum()
+    if n_carbs >= 20:
+        FEAT["carbs_medio"] = "Carbohidratos (g/día)"
+    n_sodio = df_obs["sodio_alto_frac"].notna().sum()
+    if n_sodio >= 20:
+        FEAT["sodio_alto_frac"] = "Fracción días sodio alto"
 
     feat_keys = list(FEAT.keys())
     df_m = df_obs[feat_keys + ["delta_dia", "fecha"]].dropna(
