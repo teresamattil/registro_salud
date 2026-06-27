@@ -444,6 +444,25 @@ elif pagina == "Modelo de peso":
                .groupby("Fecha", as_index=False).first()
                [["Fecha", "Body mass(kg)"]]
                .rename(columns={"Body mass(kg)": "peso_kg"}))
+    df_peso = df_peso.sort_values("Fecha").reset_index(drop=True)
+
+    # ---- Filtro de Kalman sobre pesadas ----
+    # R = varianza ruido de medición (báscula): std ~300g → R = 0.09 kg²
+    # Q = varianza ruido de proceso (peso real): std ~100g/día → Q = 0.01 kg²/día
+    _KQ, _KR = 0.01, 0.09
+    _x = float(df_peso["peso_kg"].iloc[0])
+    _P = _KR
+    _pesos_k = [_x]
+    for _i in range(1, len(df_peso)):
+        _gap = (df_peso["Fecha"].iloc[_i] - df_peso["Fecha"].iloc[_i - 1]).days
+        _P = _P + _gap * _KQ                      # predicción
+        _z = float(df_peso["peso_kg"].iloc[_i])
+        _K = _P / (_P + _KR)                      # ganancia de Kalman
+        _x = _x + _K * (_z - _x)                  # actualización
+        _P = (1 - _K) * _P
+        _pesos_k.append(_x)
+    df_peso["peso_kg_raw"] = df_peso["peso_kg"].copy()
+    df_peso["peso_kg"] = _pesos_k
 
     # ---- Comidas diarias: total + alcohol ----
     _alc_kw = ["cerveza", "vino", "whiskey", "whisky", "gin", "ron", "vodka",
@@ -585,9 +604,11 @@ elif pagina == "Modelo de peso":
     r2_loo = float(max(0.0, 1.0 - ((y - y_loo)**2).sum() / ss_tot))
 
     # ---- Métricas ----
+    _K_ss = np.sqrt(_KQ * _KR) / (_KR + np.sqrt(_KQ * _KR))  # ganancia estacionaria aprox.
     st.caption(
         f"**{len(df_m)}** pares de pesadas consecutivas (≤7 días) con datos de comida · "
-        f"Sueño disponible en {n_sueño} períodos"
+        f"Sueño disponible en {n_sueño} períodos · "
+        f"Filtro de Kalman activo (Q={_KQ}, R={_KR}, ganancia≈{_K_ss:.2f})"
     )
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("R² (ajuste)", f"{r2:.2f}",
@@ -667,7 +688,7 @@ elif pagina == "Modelo de peso":
             f"{delta_pred * gap_p * 1000:+.0f} g"
         )
         if dias_comida == 0:
-            pc.warning(f"Sin datos de comidas desde {f_ult} — predicción solo por ciclo/fase")
+            pc.warning(f"Sin comidas desde {f_ult} — usando superávit medio histórico como base")
         elif dias_comida < dias_esperados:
             pc.warning(f"Datos parciales: {dias_comida}/{dias_esperados} días con comidas")
         else:
