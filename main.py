@@ -675,15 +675,6 @@ elif pagina == "Modelo de peso":
             pc.success(f"{dias_comida} día(s) de comidas analizados")
     st.divider()
 
-    # ---- N por fase (diagnóstico de estabilidad) ----
-    df_m = df_m.copy()
-    df_m["fase"] = df_m.apply(
-        lambda r: "Menstrual" if r["es_menstrual"] > 0.5
-        else ("Lútea" if r["es_lutea"] > 0.5 else "Folicular"),
-        axis=1
-    )
-    n_por_fase = df_m["fase"].value_counts().to_dict()
-
     # ---- Tabla de coeficientes ----
     st.subheader("¿Qué explica los cambios de peso?")
     coef_norm = w[1:]
@@ -695,23 +686,7 @@ elif pagina == "Modelo de peso":
     }).sort_values("Importancia relativa (%)", ascending=False).reset_index(drop=True)
     st.dataframe(df_coef, use_container_width=True)
     st.caption(
-        "Para las variables de ciclo (fracción 0–1): el efecto es el máximo al pasar el período entero "
-        "en esa fase. Con pocos datos por fase los coeficientes son inestables — ver N por fase abajo."
-    )
-
-    # ---- Efecto crudo por fase (sin modelo, solo descriptivo) ----
-    st.subheader("Efecto crudo del ciclo — sin modelo")
-    raw_fase = (df_m.groupby("fase")["delta_dia"]
-                .agg(n="count", media_g=lambda x: x.mean() * 1000, std_g=lambda x: x.std() * 1000)
-                .reset_index())
-    raw_fase.columns = ["Fase", "N observaciones", "Δ Peso medio (g/día)", "Desv. típica (g/día)"]
-    raw_fase["Δ Peso medio (g/día)"] = raw_fase["Δ Peso medio (g/día)"].round(1)
-    raw_fase["Desv. típica (g/día)"] = raw_fase["Desv. típica (g/día)"].round(1)
-    st.dataframe(raw_fase.sort_values("Fase"), use_container_width=True)
-    st.caption(
-        "Esta tabla no depende del modelo. Si la media de Δpeso en fase menstrual es negativa "
-        "y en fase lútea positiva, el efecto del ciclo es real en tus datos. "
-        "Si la N es <8, interpreta con mucha cautela."
+        "Para las variables de ciclo (fracción 0–1): el efecto es el máximo al pasar el período entero en esa fase."
     )
 
     # ---- Gráfica predicción vs real (último mes) ----
@@ -738,18 +713,81 @@ elif pagina == "Modelo de peso":
     fig_m.update_layout(yaxis_title="g/día", hovermode="x unified")
     st.plotly_chart(fig_m, use_container_width=True)
 
-    # ---- Residuos por fase del ciclo ----
-    st.subheader("Residuos por fase del ciclo")
-    df_res = df_m.copy()
-    df_res["residuo_g"] = (y - y_hat) * 1000
-    fig_b = px.box(
-        df_res, x="fase", y="residuo_g", color="fase",
-        color_discrete_map={"Menstrual": "#e74c3c", "Folicular": "#2ecc71", "Lútea": "#f39c12"},
-        labels={"residuo_g": "Residuo (g/día)", "fase": "Fase del ciclo"}
-    )
-    fig_b.add_hline(y=0, line_dash="dash", line_color="gray")
-    st.plotly_chart(fig_b, use_container_width=True)
-    st.caption(
-        "Residuos positivos = el peso subió más de lo predicho. "
-        "Si los residuos de lútea son sistemáticamente positivos, el modelo está subestimando la retención de agua del ciclo."
-    )
+    # ---- Tendencia mensual de features ----
+    st.subheader("¿Qué ha cambiado mes a mes?")
+
+    _dt = df_master.copy()
+    _dt["mes"] = pd.to_datetime(_dt["Fecha"]).dt.to_period("M").dt.to_timestamp()
+
+    _food_mes = (_dt[_dt["kcal_total"].notna() & (_dt["kcal_total"] > 0)]
+                 .groupby("mes").agg(
+                     superavit_medio=("superavit",      "mean"),
+                     carbs_medio    =("carbs_total",    "mean"),
+                     sodio_alto_frac=("sodio_alto_frac","mean"),
+                     n_dias         =("kcal_total",     "count"),
+                 ).reset_index())
+    _food_mes = _food_mes[_food_mes["n_dias"] >= 5]
+
+    _peso_mes = (df_peso
+                 .assign(mes=pd.to_datetime(df_peso["Fecha"]).dt.to_period("M").dt.to_timestamp())
+                 .groupby("mes")["peso_kg"].mean().reset_index())
+
+    _trend = _food_mes.merge(_peso_mes, on="mes", how="inner")
+
+    if len(_trend) < 2:
+        st.info("No hay suficientes meses con datos para mostrar la tendencia.")
+    else:
+        # Peso mensual
+        fig_tw = go.Figure()
+        fig_tw.add_trace(go.Scatter(
+            x=_trend["mes"], y=_trend["peso_kg"].round(2),
+            mode="lines+markers", line=dict(color="#2c3e50", width=2),
+        ))
+        fig_tw.update_layout(yaxis_title="kg", height=200,
+                              margin=dict(t=10, b=10, l=0, r=0),
+                              hovermode="x unified")
+        st.caption("Peso medio mensual")
+        st.plotly_chart(fig_tw, use_container_width=True)
+
+        # Features más importantes del modelo, de 2 en 2
+        _candidates = [
+            ("superavit_medio",  "Superávit calórico (kcal/día)", "#e74c3c"),
+            ("carbs_medio",      "Carbohidratos (g/día)",         "#f39c12"),
+            ("sodio_alto_frac",  "Fracción sodio alto",           "#9b59b6"),
+        ]
+        _feats_plot = [("superavit_medio", "Superávit calórico (kcal/día)", "#e74c3c")] + [
+            (k, l, c) for k, l, c in _candidates[1:]
+            if k in feat_keys and k in _trend.columns and _trend[k].notna().sum() >= 2
+        ]
+
+        for _i in range(0, len(_feats_plot), 2):
+            _cols = st.columns(2)
+            for _j in range(2):
+                if _i + _j >= len(_feats_plot):
+                    break
+                _key, _label, _color = _feats_plot[_i + _j]
+                _vals = _trend[_key].dropna()
+                if len(_vals) < 2:
+                    continue
+                _media = float(_vals.mean())
+                _fig_f = go.Figure()
+                _fig_f.add_trace(go.Scatter(
+                    x=_trend["mes"], y=_trend[_key].round(1),
+                    mode="lines+markers", line=dict(color=_color, width=2),
+                ))
+                _fig_f.add_hline(y=_media, line_dash="dot", line_color="gray",
+                                  annotation_text=f"media {_media:.0f}",
+                                  annotation_position="bottom right")
+                _fig_f.update_layout(
+                    height=200, margin=dict(t=10, b=10, l=0, r=0),
+                    hovermode="x unified", showlegend=False,
+                )
+                with _cols[_j]:
+                    st.caption(_label)
+                    st.plotly_chart(_fig_f, use_container_width=True)
+
+        st.caption(
+            "Cada punto = media mensual de días con comida registrada (mín. 5 días/mes). "
+            "Superávit negativo = déficit calórico → baja peso. "
+            "Compara la dirección de cada feature con la curva de peso de arriba."
+        )
