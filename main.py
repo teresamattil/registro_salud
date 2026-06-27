@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import requests
 import base64
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
@@ -596,6 +596,83 @@ elif pagina == "Modelo de peso":
               help="R² real estimado mediante leave-one-out. Si es mucho menor que R² ajuste, hay sobreajuste.")
     c3.metric("Error típico", f"±{rmse * 1000:.0f} g/día")
     c4.metric("Observaciones", len(df_m))
+
+    # ---- Predicción para mañana ----
+    st.divider()
+    st.subheader("Predicción para mañana")
+    hoy_p    = date.today()
+    manana_p = hoy_p + timedelta(days=1)
+    ultimo_p = df_peso.sort_values("Fecha").iloc[-1]
+    f_ult    = ultimo_p["Fecha"]
+    gap_p    = (manana_p - f_ult).days
+    dias_desde = (hoy_p - f_ult).days
+
+    if gap_p > 7:
+        st.info(
+            f"Tu última pesada fue hace **{dias_desde} días** ({f_ult}). "
+            "Pésate primero para activar la predicción (máx. 7 días de ventana)."
+        )
+    else:
+        pred_period = df_master[
+            (df_master["Fecha"] >= f_ult) & (df_master["Fecha"] < manana_p)
+        ]
+        pred_food = pred_period[
+            pred_period["kcal_total"].notna() & (pred_period["kcal_total"] > 0)
+        ]
+        dias_comida    = len(pred_food)
+        dias_esperados = dias_desde + 1  # días de comida en ventana (hoy incluido)
+
+        fp = pred_food
+        _sup = fp["superavit"].mean()    if not fp.empty else np.nan
+        _alc = fp["kcal_alcohol"].mean() if not fp.empty else 0.0
+
+        _fases_v = [_fase((pd.Timestamp(f_ult) + pd.Timedelta(days=d)).date(), df_ciclo)
+                    for d in range(gap_p)]
+        _lut  = float(np.mean([v[2] for v in _fases_v]))
+        _mens = float(np.mean([v[1] for v in _fases_v]))
+
+        x_pred_map = {
+            "superavit_medio": _sup  if not pd.isna(_sup)  else float(df_m["superavit_medio"].mean()),
+            "alcohol_medio":   _alc,
+            "es_lutea":        _lut,
+            "es_menstrual":    _mens,
+        }
+        if "sueño_medio" in feat_keys:
+            sv = pred_period["horas_cama"].mean()
+            x_pred_map["sueño_medio"] = sv if not pd.isna(sv) else float(df_m["sueño_medio"].median())
+        if "carbs_medio" in feat_keys:
+            cv = fp["carbs_total"].mean() if not fp.empty else np.nan
+            x_pred_map["carbs_medio"] = cv if not pd.isna(cv) else float(df_m["carbs_medio"].median())
+        if "sodio_alto_frac" in feat_keys:
+            sv2 = fp["sodio_alto_frac"].mean() if not fp.empty else np.nan
+            x_pred_map["sodio_alto_frac"] = sv2 if not pd.isna(sv2) else float(df_m["sodio_alto_frac"].median())
+        if "hora_ultima_media" in feat_keys:
+            hv = fp["hora_ultima"].mean() if not fp.empty else np.nan
+            x_pred_map["hora_ultima_media"] = hv if not pd.isna(hv) else float(df_m["hora_ultima_media"].median())
+
+        x_arr = np.array([x_pred_map[k] for k in feat_keys])
+        x_s   = np.concatenate([[1.0], (x_arr - mu) / sigma])
+        delta_pred = float(x_s @ w)
+        peso_pred  = float(ultimo_p["peso_kg"]) + delta_pred * gap_p
+
+        pa, pb, pc = st.columns(3)
+        pa.metric(
+            "Última pesada",
+            f"{float(ultimo_p['peso_kg']):.2f} kg",
+            f"hace {dias_desde}d" if dias_desde > 0 else "hoy"
+        )
+        pb.metric(
+            "Peso estimado mañana",
+            f"{peso_pred:.2f} kg",
+            f"{delta_pred * gap_p * 1000:+.0f} g"
+        )
+        if dias_comida == 0:
+            pc.warning(f"Sin datos de comidas desde {f_ult} — predicción solo por ciclo/fase")
+        elif dias_comida < dias_esperados:
+            pc.warning(f"Datos parciales: {dias_comida}/{dias_esperados} días con comidas")
+        else:
+            pc.success(f"{dias_comida} día(s) de comidas analizados")
+    st.divider()
 
     # ---- N por fase (diagnóstico de estabilidad) ----
     df_m = df_m.copy()
