@@ -46,6 +46,61 @@ def load_peso():
     dp.columns = ["Fecha", "peso_kg"]
     return dp
 
+@st.cache_data
+def load_basal_energy():
+    d = pd.read_csv("data/basal_energy.csv")
+    d["Fecha"] = pd.to_datetime(d["Date"]).dt.date
+    d["basal_kcal"] = d["Basal energy burned(kcal)"]
+    return d[["Fecha", "basal_kcal"]]
+
+@st.cache_data
+def load_active_energy():
+    d = pd.read_csv("data/active_energy.csv")
+    d["Fecha"] = pd.to_datetime(d["Date"]).dt.date
+    d["activo_kcal"] = pd.to_numeric(d["Active energy burned(kcal)"], errors="coerce")
+    return d[["Fecha", "activo_kcal"]]
+
+@st.cache_data
+def load_sleep_data():
+    d = pd.read_csv("data/sleep_time.csv")
+    rows = []
+    for _, row in d.iterrows():
+        parts = str(row["Date"]).strip().split(" - ")
+        if len(parts) != 2:
+            continue
+        try:
+            end_dt = pd.to_datetime(parts[1])
+            horas = float(row["Time in bed(hr)"])
+        except Exception:
+            continue
+        if horas <= 1.0:
+            continue
+        rows.append({"Fecha": end_dt.date(), "horas_cama": horas})
+    if not rows:
+        return pd.DataFrame(columns=["Fecha", "horas_cama"])
+    return pd.DataFrame(rows).groupby("Fecha", as_index=False)["horas_cama"].sum()
+
+@st.cache_data
+def load_ciclo():
+    d = pd.read_csv("data/ciclo.csv")
+    d["inicio"] = pd.to_datetime(d["Fecha_inicio_cliclo"], dayfirst=True).dt.date
+    d["fin"] = pd.to_datetime(d["Fecha_fin_ciclo"], dayfirst=True).dt.date
+    d["dias_regla"] = pd.to_numeric(d["dias_periodo"], errors="coerce").fillna(5).astype(int)
+    return d[["inicio", "fin", "dias_regla"]].dropna(subset=["inicio", "fin"])
+
+def _fase(fecha, ciclos):
+    for _, c in ciclos.iterrows():
+        if c["inicio"] <= fecha <= c["fin"]:
+            dia = (fecha - c["inicio"]).days + 1
+            dur = (c["fin"] - c["inicio"]).days + 1
+            if dia <= c["dias_regla"]:
+                return dia, 1, 0   # dia_ciclo, es_menstrual, es_lutea
+            elif dia >= dur - 13:
+                return dia, 0, 1
+            else:
+                return dia, 0, 0
+    return np.nan, 0, 0
+
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
@@ -55,8 +110,8 @@ _prev_menu = st.session_state.get("_prev_menu")
 
 _menu_val = option_menu(
     menu_title=None,
-    options=["Resumen diario", "Registro", "Peso & Calorías", "Estimación"],
-    icons=["calendar-check", "calendar3", "speedometer2", "lightning-fill"],
+    options=["Resumen diario", "Registro", "Peso & Calorías", "Estimación", "Modelo de peso"],
+    icons=["calendar-check", "calendar3", "speedometer2", "lightning-fill", "bar-chart-line"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal",
@@ -314,3 +369,190 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
         st.cache_data.clear()
         st.success("Estimación completada")
         st.rerun()
+
+# ---------------- PÁGINA 5: MODELO DE PESO ----------------
+elif pagina == "Modelo de peso":
+    st.title("📊 Modelo explicativo del peso")
+
+    # ---- Cargar fuentes ----
+    df_basal  = load_basal_energy()
+    df_activo = load_active_energy()
+    df_sleep  = load_sleep_data()
+    df_ciclo  = load_ciclo()
+
+    # Peso: primera medición del día (mañana)
+    dp_raw = pd.read_csv("data/peso_diario.csv")
+    dp_raw["dt"] = pd.to_datetime(dp_raw["Date"])
+    dp_raw["Fecha"] = dp_raw["dt"].dt.date
+    df_peso = (dp_raw.sort_values("dt")
+               .groupby("Fecha", as_index=False).first()
+               [["Fecha", "Body mass(kg)"]]
+               .rename(columns={"Body mass(kg)": "peso_kg"}))
+
+    # ---- Comidas diarias: total + alcohol ----
+    _alc_kw = ["cerveza", "vino", "whiskey", "whisky", "gin", "ron", "vodka",
+               "copa", "caña", "cubata", "cava", "chupito", "jager", "tequila",
+               "licor", "vermut", "sidra"]
+    _df = df.copy()
+    _df["_alc"] = _df["comida"].str.lower().apply(lambda x: any(k in str(x) for k in _alc_kw))
+    _df["_kcal_alc"] = _df["calorías_estimadas"].where(_df["_alc"], 0.0)
+    df_food = _df.groupby("Fecha").agg(
+        kcal_total=("calorías_estimadas", "sum"),
+        kcal_alcohol=("_kcal_alc", "sum")
+    ).reset_index()
+
+    # ---- Tabla diaria maestra ----
+    df_e = df_basal.merge(df_activo, on="Fecha", how="outer")
+    df_e["gasto"] = (df_e["basal_kcal"].fillna(df_e["basal_kcal"].median()) +
+                     df_e["activo_kcal"].fillna(df_e["activo_kcal"].median()))
+
+    df_master = (df_e
+        .merge(df_food, on="Fecha", how="left")
+        .merge(df_sleep, on="Fecha", how="left")
+        .sort_values("Fecha").reset_index(drop=True))
+    df_master["superavit"] = df_master["kcal_total"] - df_master["gasto"]
+
+    # Fase del ciclo para cada día
+    _res = df_master["Fecha"].apply(lambda f: _fase(f, df_ciclo))
+    df_master["dia_ciclo"]    = [r[0] for r in _res]
+    df_master["es_menstrual"] = [r[1] for r in _res]
+    df_master["es_lutea"]     = [r[2] for r in _res]
+
+    # ---- Construir observaciones: pares de pesadas consecutivas ----
+    peso_s = df_peso.sort_values("Fecha").reset_index(drop=True)
+    obs = []
+    for i in range(len(peso_s) - 1):
+        r1, r2 = peso_s.iloc[i], peso_s.iloc[i + 1]
+        gap = (r2["Fecha"] - r1["Fecha"]).days
+        if not (1 <= gap <= 7):
+            continue
+        period = df_master[
+            (df_master["Fecha"] >= r1["Fecha"]) & (df_master["Fecha"] < r2["Fecha"])
+        ]
+        dias_comida = (period["kcal_total"].fillna(0) > 0).sum()
+        if dias_comida < max(1, gap // 2):
+            continue
+        food_rows = period[period["kcal_total"].notna() & (period["kcal_total"] > 0)]
+        obs.append({
+            "fecha": r2["Fecha"],
+            "delta_dia": (r2["peso_kg"] - r1["peso_kg"]) / gap,
+            "superavit_medio": food_rows["superavit"].mean() if not food_rows.empty else np.nan,
+            "alcohol_medio":   food_rows["kcal_alcohol"].mean() if not food_rows.empty else 0.0,
+            "activo_medio":    period["activo_kcal"].mean(),
+            "sueño_medio":     period["horas_cama"].mean(),
+            "es_lutea":        period["es_lutea"].mean(),
+            "es_menstrual":    period["es_menstrual"].mean(),
+        })
+
+    df_obs = pd.DataFrame(obs)
+    if df_obs.empty:
+        st.warning("No hay suficientes datos para construir el modelo.")
+        st.stop()
+
+    # Imputar activo con mediana cuando falte
+    df_obs["activo_medio"] = df_obs["activo_medio"].fillna(df_obs["activo_medio"].median())
+
+    # ---- Selección de features ----
+    FEAT = {
+        "superavit_medio": "Superávit calórico (kcal/día)",
+        "alcohol_medio":   "Calorías alcohol (kcal/día)",
+        "activo_medio":    "Energía activa quemada (kcal/día)",
+        "es_lutea":        "Fase lútea (fracción del período)",
+        "es_menstrual":    "Fase menstrual (fracción del período)",
+    }
+    n_sueño = df_obs["sueño_medio"].notna().sum()
+    if n_sueño >= 10:
+        df_obs["sueño_medio"] = df_obs["sueño_medio"].fillna(df_obs["sueño_medio"].median())
+        FEAT["sueño_medio"] = "Horas en cama (media del período)"
+
+    feat_keys = list(FEAT.keys())
+    df_m = df_obs[feat_keys + ["delta_dia", "fecha"]].dropna()
+
+    st.caption(
+        f"Observaciones: **{len(df_m)}** pares de pesadas consecutivas (≤7 días) "
+        f"con datos de comida suficientes | Sueño disponible en {n_sueño} períodos"
+    )
+
+    if len(df_m) < 10:
+        st.warning(f"Solo {len(df_m)} observaciones completas. Añade más días con datos de comida.")
+        st.stop()
+
+    # ---- Ridge regression (numpy) ----
+    X = df_m[feat_keys].values.astype(float)
+    y = df_m["delta_dia"].values.astype(float)
+
+    mu    = X.mean(axis=0)
+    sigma = X.std(axis=0)
+    sigma[sigma == 0] = 1.0
+    Xs = np.column_stack([np.ones(len(X)), (X - mu) / sigma])
+
+    alpha_r = 0.5
+    I_reg = np.diag([0.0] + [1.0] * len(feat_keys))
+    w = np.linalg.solve(Xs.T @ Xs + alpha_r * I_reg, Xs.T @ y)
+
+    y_hat   = Xs @ w
+    ss_res  = ((y - y_hat) ** 2).sum()
+    ss_tot  = ((y - y.mean()) ** 2).sum()
+    r2      = float(max(0.0, 1.0 - ss_res / ss_tot))
+    rmse    = float(np.sqrt(ss_res / len(y)))
+
+    # ---- Métricas ----
+    c1, c2, c3 = st.columns(3)
+    c1.metric("R²", f"{r2:.2f}",
+              help="Fracción de la varianza del Δpeso explicada. 0 = el modelo no sirve, 1 = perfecto.")
+    c2.metric("Error típico", f"±{rmse * 1000:.0f} g/día",
+              help="Error medio de la predicción diaria del modelo.")
+    c3.metric("Observaciones", len(df_m))
+
+    # ---- Tabla de coeficientes ----
+    st.subheader("¿Qué explica los cambios de peso?")
+    coef_norm = w[1:]
+    coef_orig = coef_norm / sigma
+    df_coef = pd.DataFrame({
+        "Variable": [FEAT[k] for k in feat_keys],
+        "Efecto por unidad → g/día": np.round(coef_orig * 1000, 2),
+        "Importancia relativa (%)":  np.round(np.abs(coef_norm) / np.abs(coef_norm).sum() * 100, 1),
+    }).sort_values("Importancia relativa (%)", ascending=False).reset_index(drop=True)
+    st.dataframe(df_coef, use_container_width=True)
+    st.caption(
+        "**Efecto por unidad**: cuántos g/día cambia el peso por cada kcal extra de superávit, "
+        "cada hora de sueño, etc. **Importancia relativa**: peso de cada variable en el modelo."
+    )
+
+    # ---- Gráfica predicción vs real ----
+    st.subheader("Predicción vs realidad")
+    fechas_plot = df_m["fecha"].tolist()
+    fig_m = go.Figure()
+    fig_m.add_trace(go.Scatter(
+        x=fechas_plot, y=(y * 1000).tolist(),
+        name="Δ Peso real (g/día)", mode="lines+markers", line=dict(color="#e74c3c")
+    ))
+    fig_m.add_trace(go.Scatter(
+        x=fechas_plot, y=(y_hat * 1000).tolist(),
+        name="Δ Peso estimado (g/día)", mode="lines+markers",
+        line=dict(color="#115a8e", dash="dash")
+    ))
+    fig_m.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_m.update_layout(yaxis_title="g/día", hovermode="x unified")
+    st.plotly_chart(fig_m, use_container_width=True)
+
+    # ---- Residuos por fase del ciclo ----
+    st.subheader("Residuos por fase del ciclo")
+    df_res = df_m.copy()
+    df_res["residuo_g"] = (y - y_hat) * 1000
+    df_res["fase"] = df_res.apply(
+        lambda r: "Menstrual" if r["es_menstrual"] > 0.5
+        else ("Lútea" if r["es_lutea"] > 0.5 else "Folicular"),
+        axis=1
+    )
+    fig_b = px.box(
+        df_res, x="fase", y="residuo_g", color="fase",
+        color_discrete_map={"Menstrual": "#e74c3c", "Folicular": "#2ecc71", "Lútea": "#f39c12"},
+        labels={"residuo_g": "Residuo (g/día)", "fase": "Fase del ciclo"}
+    )
+    fig_b.add_hline(y=0, line_dash="dash", line_color="gray")
+    st.plotly_chart(fig_b, use_container_width=True)
+    st.caption(
+        "Residuos positivos = el peso subió más de lo predicho por el modelo. "
+        "Si una fase tiene residuos sistemáticamente altos, esa variable necesita más peso en el modelo."
+    )
