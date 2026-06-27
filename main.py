@@ -256,66 +256,116 @@ elif pagina == "Peso & Calorías":
         .sort_values("Fecha")
         .reset_index(drop=True)
     )
+    df_merged["Fecha"] = pd.to_datetime(df_merged["Fecha"])
 
-    vista = st.radio("Vista", ["Diario", "Tendencia mensual"], horizontal=True)
+    # ---- Selector de período ----
+    PERIODOS = {"1S": 7, "1M": 30, "6M": 182, "1A": 365, "Todo": None}
+    if "periodo_peso" not in st.session_state:
+        st.session_state["periodo_peso"] = "1M"
 
-    if vista == "Diario":
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=df_merged["Fecha"], y=df_merged["calorías_estimadas"],
-            name="Calorías", yaxis="y1",
-            line=dict(color="#115a8e"), mode="lines+markers"
-        ))
-        fig.add_trace(go.Scatter(
-            x=df_merged["Fecha"], y=df_merged["peso_kg"],
-            name="Peso (kg)", yaxis="y2",
-            line=dict(color="#e74c3c"), mode="lines+markers"
-        ))
-        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange", annotation_text="Objetivo kcal")
-        fig.update_layout(
-            yaxis=dict(title="Calorías"),
-            yaxis2=dict(title="Peso (kg)", overlaying="y", side="right"),
-            legend=dict(x=0.01, y=0.99),
-            hovermode="x unified"
+    cols_p = st.columns(len(PERIODOS))
+    for col, (label, _) in zip(cols_p, PERIODOS.items()):
+        with col:
+            if st.button(
+                label,
+                use_container_width=True,
+                type="primary" if st.session_state["periodo_peso"] == label else "secondary",
+            ):
+                st.session_state["periodo_peso"] = label
+                st.rerun()
+
+    periodo = st.session_state["periodo_peso"]
+    dias = PERIODOS[periodo]
+    hoy = pd.Timestamp(date.today())
+    df_v = df_merged[df_merged["Fecha"] >= hoy - pd.Timedelta(days=dias)].copy() if dias else df_merged.copy()
+
+    # ---- Agregación según período ----
+    if periodo in ["1S", "1M"]:
+        df_plot = df_v.rename(columns={"Fecha": "x"})
+        kcal_label = "Calorías"
+    elif periodo in ["6M", "1A"]:
+        df_v["x"] = df_v["Fecha"].dt.to_period("W").apply(lambda p: p.start_time)
+        df_plot = df_v.groupby("x", as_index=False).agg(
+            calorías_estimadas=("calorías_estimadas", "mean"),
+            peso_kg=("peso_kg", "mean"),
         )
-        st.plotly_chart(fig, use_container_width=True)
-
+        kcal_label = "Calorías medias (semana)"
     else:
-        df_m = df_merged.copy()
-        df_m["Fecha"] = pd.to_datetime(df_m["Fecha"])
-        df_m["Mes"] = df_m["Fecha"].dt.to_period("M").astype(str)
-
-        df_mes = (
-            df_m.groupby("Mes", as_index=False)
-            .agg(calorias_medias=("calorías_estimadas", "mean"), peso_medio=("peso_kg", "mean"))
-            .dropna(subset=["peso_medio"])
+        df_v["x"] = df_v["Fecha"].dt.to_period("M").apply(lambda p: p.start_time)
+        df_plot = df_v.groupby("x", as_index=False).agg(
+            calorías_estimadas=("calorías_estimadas", "mean"),
+            peso_kg=("peso_kg", "mean"),
         )
+        kcal_label = "Calorías medias (mes)"
 
-        x_idx = np.arange(len(df_mes))
-        tendencia = np.poly1d(np.polyfit(x_idx, df_mes["peso_medio"], 1))(x_idx)
+    # ---- Métricas de resumen ----
+    pesos_v = df_v.dropna(subset=["peso_kg"])
+    peso_fin   = pesos_v["peso_kg"].iloc[-1]  if len(pesos_v) >= 1 else None
+    peso_ini   = pesos_v["peso_kg"].iloc[0]   if len(pesos_v) >= 2 else None
+    kcal_media = df_v["calorías_estimadas"].mean()
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=df_mes["Mes"], y=df_mes["calorias_medias"],
-            name="Calorías medias diarias", marker_color="#115a8e", yaxis="y1", opacity=0.7
-        ))
+    m1, m2, m3 = st.columns(3)
+    if peso_fin is not None:
+        m1.metric("Peso actual", f"{peso_fin:.1f} kg")
+    if peso_ini is not None and peso_fin is not None:
+        delta = peso_fin - peso_ini
+        m2.metric("Cambio en el período", f"{delta:+.2f} kg")
+    if not pd.isna(kcal_media):
+        m3.metric("Media calórica", f"{kcal_media:.0f} kcal/día")
+
+    # ---- Gráfica ----
+    fig = go.Figure()
+
+    # Barras de calorías
+    fig.add_trace(go.Bar(
+        x=df_plot["x"], y=df_plot["calorías_estimadas"],
+        name=kcal_label, marker_color="#115a8e", opacity=0.55, yaxis="y1"
+    ))
+    fig.add_hline(
+        y=objetivo, line_dash="dash", line_color="rgba(243,156,18,0.7)",
+        annotation_text="Objetivo", annotation_position="top left", yref="y1"
+    )
+
+    # Peso
+    dp = df_plot.dropna(subset=["peso_kg"])
+    fig.add_trace(go.Scatter(
+        x=dp["x"], y=dp["peso_kg"],
+        name="Peso (kg)", yaxis="y2",
+        line=dict(color="#e74c3c", width=2), mode="lines+markers",
+        marker=dict(size=4 if periodo not in ["1S", "1M"] else 6),
+    ))
+
+    # Media móvil 7 días (solo en vista diaria con suficientes puntos)
+    if periodo in ["1S", "1M"] and len(dp) >= 5:
+        dp = dp.copy()
+        dp["rolling"] = dp["peso_kg"].rolling(7, min_periods=2, center=True).mean()
         fig.add_trace(go.Scatter(
-            x=df_mes["Mes"], y=df_mes["peso_medio"],
-            name="Peso medio (kg)", yaxis="y2",
-            line=dict(color="#e74c3c", width=2), mode="lines+markers"
+            x=dp["x"], y=dp["rolling"],
+            name="Media 7 días", yaxis="y2",
+            line=dict(color="#c0392b", dash="dot", width=1.5), mode="lines",
         ))
+
+    # Línea de tendencia (en 6M, 1A, Todo)
+    if periodo not in ["1S", "1M"] and len(dp) >= 3:
+        idx_t = np.arange(len(dp))
+        tend  = np.poly1d(np.polyfit(idx_t, dp["peso_kg"].values, 1))(idx_t)
         fig.add_trace(go.Scatter(
-            x=df_mes["Mes"], y=tendencia,
-            name="Tendencia peso", yaxis="y2",
-            line=dict(color="#e74c3c", dash="dash", width=1.5), mode="lines"
+            x=dp["x"].values, y=tend,
+            name="Tendencia", yaxis="y2",
+            line=dict(color="#e74c3c", dash="dash", width=1.5), mode="lines",
         ))
-        fig.update_layout(
-            yaxis=dict(title="Calorías medias diarias"),
-            yaxis2=dict(title="Peso (kg)", overlaying="y", side="right"),
-            legend=dict(x=0.01, y=0.99),
-            hovermode="x unified"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+
+    fig.update_layout(
+        yaxis=dict(title="Calorías", showgrid=True, gridcolor="#f0f0f0"),
+        yaxis2=dict(title="Peso (kg)", overlaying="y", side="right", showgrid=False),
+        legend=dict(orientation="h", y=-0.15, x=0),
+        hovermode="x unified",
+        margin=dict(l=0, r=10, t=10, b=40),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        bargap=0.15,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- PÁGINA 4 ----------------
 elif pagina == "Estimación":
