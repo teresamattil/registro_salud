@@ -53,11 +53,12 @@ df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 pagina = option_menu(
     menu_title=None,
-    options=["Resumen diario", "Evolución", "Peso & Calorías", "Estimación"],
-    icons=["calendar-check", "graph-up", "speedometer2", "lightning-fill"],
+    options=["Resumen diario", "Registro", "Peso & Calorías", "Estimación"],
+    icons=["calendar-check", "calendar3", "speedometer2", "lightning-fill"],
     menu_icon="cast",
     default_index=0,
-    orientation="horizontal"
+    orientation="horizontal",
+    key="menu_nav"
 )
 
 # ---------------- PÁGINA 1 ----------------
@@ -137,89 +138,41 @@ if pagina == "Resumen diario":
         st.rerun()
 
 # ---------------- PÁGINA 2 ----------------
-elif pagina == "Evolución":
-    st.title("📈 Evolución de calorías")
+elif pagina == "Registro":
+    st.title("📋 Registro de días")
 
-    df_daily = df.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
+    dias_atras = st.slider("Últimos días", 7, 60, 30)
+    hoy = date.today()
+    rango = [hoy - pd.Timedelta(days=i) for i in range(dias_atras)]
 
-    vista = st.radio(
-        "Vista",
-        ["Último mes (diario)", "Rango personalizado", "Media mensual (anual)"],
-        horizontal=True
+    dias_con_datos = (
+        df.groupby("Fecha")["calorías_estimadas"]
+        .agg(n="count", kcal="sum")
+        .to_dict("index")
     )
 
-    if vista == "Último mes (diario)":
-        ultimo_mes = date.today() - pd.Timedelta(days=30)
-        df_plot = df_daily[df_daily["Fecha"] >= ultimo_mes].copy()
+    nombres_dia = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
-        dias = ["L", "M", "X", "J", "V", "S", "D"]
-        df_plot["Etiqueta"] = (
-            df_plot["Fecha"].apply(lambda d: f"{dias[d.weekday()]} {d.day}")
-        )
+    for dia_r in rango:
+        col1, col2, col3 = st.columns([2, 4, 1])
+        info = dias_con_datos.get(dia_r)
+        label = f"{nombres_dia[dia_r.weekday()]} {dia_r.strftime('%d %b')}"
 
-        fig = px.line(
-            df_plot,
-            x="Etiqueta",
-            y="calorías_estimadas",
-            markers=True
-        )
-        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
-        st.plotly_chart(fig, use_container_width=True)
-
-
-    elif vista == "Rango personalizado":
-        col1, col2 = st.columns(2)
         with col1:
-            inicio = st.date_input("Fecha inicio", df_daily["Fecha"].min())
+            if info:
+                st.markdown(f"✅ **{label}**")
+            else:
+                st.markdown(f"❌ **{label}**")
         with col2:
-            fin = st.date_input("Fecha fin", df_daily["Fecha"].max())
-
-        df_plot = df_daily[(df_daily["Fecha"]>=inicio)&(df_daily["Fecha"]<=fin)].copy()
-        df_plot["Hasta_objetivo"] = df_plot["calorías_estimadas"].clip(upper=objetivo)
-        df_plot["Exceso"] = (df_plot["calorías_estimadas"]-objetivo).clip(lower=0)
-
-        fig = go.Figure()
-        fig.add_bar(x=df_plot["Fecha"], y=df_plot["Hasta_objetivo"], marker_color="#115a8e", name="Hasta objetivo")
-        fig.add_bar(x=df_plot["Fecha"], y=df_plot["Exceso"], marker_color="#d93725", name="Exceso")
-        fig.update_layout(barmode="stack")
-        st.plotly_chart(fig, use_container_width=True)
-
-    else:
-        df_m = df.copy()
-        df_m["Fecha"] = pd.to_datetime(df_m["Fecha"])
-
-        # Suma diaria
-        df_diario = (
-            df_m.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
-        )
-
-        # Año, mes y quincena
-        df_diario["Año"] = df_diario["Fecha"].dt.year
-        df_diario["Mes"] = df_diario["Fecha"].dt.month
-        df_diario["Quincena"] = df_diario["Fecha"].dt.day.apply(
-            lambda d: 1 if d <= 15 else 2
-        )
-
-        # Media quincenal de calorías diarias
-        df_avg = (
-            df_diario
-            .groupby(["Año", "Mes", "Quincena"], as_index=False)["calorías_estimadas"]
-            .mean()
-        )
-
-        df_avg["Periodo"] = (
-            df_avg["Año"].astype(str)
-            + "-"
-            + df_avg["Mes"].astype(str)
-            + " Q"
-            + df_avg["Quincena"].astype(str)
-        )
-
-        fig = px.line(df_avg, x="Periodo", y="calorías_estimadas", markers=True)
-        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange")
-        st.plotly_chart(fig, use_container_width=True)
-
-
+            if info:
+                st.caption(f"{info['n']} comidas · {int(info['kcal'])} kcal")
+            else:
+                st.caption("Sin datos")
+        with col3:
+            if st.button("Ir", key=f"ir_{dia_r}"):
+                st.session_state.dia_seleccionado = dia_r
+                st.session_state["menu_nav"] = "Resumen diario"
+                st.rerun()
 
 # ---------------- PÁGINA 3 ----------------
 elif pagina == "Peso & Calorías":
