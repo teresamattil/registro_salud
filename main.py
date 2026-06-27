@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import requests
 import base64
 from datetime import date, datetime
@@ -37,6 +38,14 @@ def save_data(df, message):
     content = base64.b64encode(df.to_csv(index=False).encode()).decode()
     requests.put(API_URL, headers=HEADERS, json={"message": message, "content": content, "sha": sha})
 
+@st.cache_data
+def load_peso():
+    dp = pd.read_csv("data/peso_diario.csv")
+    dp["Date"] = pd.to_datetime(dp["Date"]).dt.date
+    dp = dp.groupby("Date", as_index=False)["Body mass(kg)"].mean()
+    dp.columns = ["Fecha", "peso_kg"]
+    return dp
+
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
@@ -44,8 +53,8 @@ df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 pagina = option_menu(
     menu_title=None,
-    options=["Resumen diario", "Evolución", "Estimación"],
-    icons=["calendar-check", "graph-up", "lightning-fill"],
+    options=["Resumen diario", "Evolución", "Peso & Calorías", "Estimación"],
+    icons=["calendar-check", "graph-up", "speedometer2", "lightning-fill"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal"
@@ -213,6 +222,79 @@ elif pagina == "Evolución":
 
 
 # ---------------- PÁGINA 3 ----------------
+elif pagina == "Peso & Calorías":
+    st.title("⚖️ Peso & Calorías")
+
+    df_peso = load_peso()
+    df_cals = df.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
+
+    df_merged = (
+        pd.merge(df_cals, df_peso, on="Fecha", how="outer")
+        .sort_values("Fecha")
+        .reset_index(drop=True)
+    )
+
+    vista = st.radio("Vista", ["Diario", "Tendencia mensual"], horizontal=True)
+
+    if vista == "Diario":
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df_merged["Fecha"], y=df_merged["calorías_estimadas"],
+            name="Calorías", yaxis="y1",
+            line=dict(color="#115a8e"), mode="lines+markers"
+        ))
+        fig.add_trace(go.Scatter(
+            x=df_merged["Fecha"], y=df_merged["peso_kg"],
+            name="Peso (kg)", yaxis="y2",
+            line=dict(color="#e74c3c"), mode="lines+markers"
+        ))
+        fig.add_hline(y=objetivo, line_dash="dash", line_color="orange", annotation_text="Objetivo kcal")
+        fig.update_layout(
+            yaxis=dict(title="Calorías"),
+            yaxis2=dict(title="Peso (kg)", overlaying="y", side="right"),
+            legend=dict(x=0.01, y=0.99),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        df_m = df_merged.copy()
+        df_m["Fecha"] = pd.to_datetime(df_m["Fecha"])
+        df_m["Mes"] = df_m["Fecha"].dt.to_period("M").astype(str)
+
+        df_mes = (
+            df_m.groupby("Mes", as_index=False)
+            .agg(calorias_medias=("calorías_estimadas", "mean"), peso_medio=("peso_kg", "mean"))
+            .dropna(subset=["peso_medio"])
+        )
+
+        x_idx = np.arange(len(df_mes))
+        tendencia = np.poly1d(np.polyfit(x_idx, df_mes["peso_medio"], 1))(x_idx)
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=df_mes["Mes"], y=df_mes["calorias_medias"],
+            name="Calorías medias diarias", marker_color="#115a8e", yaxis="y1", opacity=0.7
+        ))
+        fig.add_trace(go.Scatter(
+            x=df_mes["Mes"], y=df_mes["peso_medio"],
+            name="Peso medio (kg)", yaxis="y2",
+            line=dict(color="#e74c3c", width=2), mode="lines+markers"
+        ))
+        fig.add_trace(go.Scatter(
+            x=df_mes["Mes"], y=tendencia,
+            name="Tendencia peso", yaxis="y2",
+            line=dict(color="#e74c3c", dash="dash", width=1.5), mode="lines"
+        ))
+        fig.update_layout(
+            yaxis=dict(title="Calorías medias diarias"),
+            yaxis2=dict(title="Peso (kg)", overlaying="y", side="right"),
+            legend=dict(x=0.01, y=0.99),
+            hovermode="x unified"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+# ---------------- PÁGINA 4 ----------------
 elif pagina == "Estimación":
     st.title("⚡ Estimar calorías automáticamente")
 
