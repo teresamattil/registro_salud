@@ -791,3 +791,82 @@ elif pagina == "Modelo de peso":
             "Superávit negativo = déficit calórico → baja peso. "
             "Compara la dirección de cada feature con la curva de peso de arriba."
         )
+
+    # ---- Contribution plot mensual ----
+    st.subheader("Contribución mensual de cada factor")
+    st.caption(
+        "Barras apiladas: cuánto aporta cada variable al Δpeso predicho (g/día). "
+        "Hacia arriba = empuja a subir peso; hacia abajo = a bajarlo. "
+        "La línea negra es el Δpeso real observado mensual."
+    )
+
+    _dm2 = df_m.copy()
+    _dm2["mes"]          = pd.to_datetime(_dm2["fecha"]).dt.to_period("M").dt.to_timestamp()
+    _dm2["delta_real_g"] = y * 1000
+
+    # Descomposición: baseline (predicción cuando features = 0) + contribución absoluta de cada feature
+    _intercept_adj = (float(w[0]) - float(np.dot(coef_orig, mu))) * 1000  # g/día, constante
+
+    for _ki, _k in enumerate(feat_keys):
+        _dm2[f"_c_{_k}"] = coef_orig[_ki] * _dm2[_k].fillna(mu[_ki]) * 1000
+
+    _ccols2 = [f"_c_{k}" for k in feat_keys]
+    _dm2_mes  = _dm2.groupby("mes")[_ccols2 + ["delta_real_g"]].mean().reset_index()
+    _counts2  = _dm2.groupby("mes")["delta_real_g"].count().reset_index(name="n_obs")
+    _dm2_mes  = _dm2_mes.merge(_counts2, on="mes")
+    _dm2_mes  = _dm2_mes[_dm2_mes["n_obs"] >= 2].reset_index(drop=True)
+
+    _FEAT_COLORS = {
+        "superavit_medio":   "#e74c3c",
+        "carbs_medio":       "#f39c12",
+        "sodio_alto_frac":   "#2980b9",
+        "hora_ultima_media": "#27ae60",
+        "alcohol_medio":     "#8e44ad",
+        "sueño_medio":       "#16a085",
+        "es_lutea":          "#e67e22",
+        "es_menstrual":      "#c0392b",
+    }
+
+    if len(_dm2_mes) >= 2:
+        fig_cp = go.Figure()
+
+        # Baseline (intercepto ajustado, constante)
+        fig_cp.add_trace(go.Bar(
+            x=_dm2_mes["mes"],
+            y=[_intercept_adj] * len(_dm2_mes),
+            name="Baseline",
+            marker_color="#bdc3c7",
+            opacity=0.7,
+        ))
+
+        # Contribución de cada feature
+        for _k in feat_keys:
+            fig_cp.add_trace(go.Bar(
+                x=_dm2_mes["mes"],
+                y=_dm2_mes[f"_c_{_k}"].round(1),
+                name=FEAT[_k],
+                marker_color=_FEAT_COLORS.get(_k, "#95a5a6"),
+            ))
+
+        # Δpeso real observado
+        fig_cp.add_trace(go.Scatter(
+            x=_dm2_mes["mes"],
+            y=_dm2_mes["delta_real_g"].round(1),
+            mode="lines+markers",
+            name="Δ Peso real",
+            line=dict(color="#2c3e50", width=2.5),
+            marker=dict(size=6),
+        ))
+
+        fig_cp.add_hline(y=0, line_dash="dot", line_color="gray")
+        fig_cp.update_layout(
+            barmode="relative",
+            yaxis_title="g/día",
+            hovermode="x unified",
+            height=420,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(t=60, b=20, l=0, r=0),
+        )
+        st.plotly_chart(fig_cp, use_container_width=True)
+    else:
+        st.info("No hay suficientes meses con datos para mostrar la descomposición.")
