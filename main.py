@@ -464,7 +464,7 @@ elif pagina == "Modelo de peso":
         FEAT["sueño_medio"] = "Horas en cama (media del período)"
 
     feat_keys = list(FEAT.keys())
-    df_m = df_obs[feat_keys + ["delta_dia", "fecha", "es_lutea", "es_menstrual"]].dropna(
+    df_m = df_obs[feat_keys + ["delta_dia", "fecha"]].dropna(
         subset=feat_keys + ["delta_dia"]
     )
 
