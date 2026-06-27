@@ -702,7 +702,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-04-23,08:00,Cafe con leche ,,60.0,6.3,3.3,bajo
 2026-04-23,08:00,Tostada de aceite y pavo,,240.0,34.8,6.6,medio
 2026-04-23,14:30,Sandwich de lomo asado con lechuga mostaza y mayonesa,,480.0,2.4,45.6,medio
-2026-04-23,21:00,nada,,0.0,,,
+2026-04-23,21:00,nada,,0.0,0.0,0.0,bajo
 2026-04-24,08:00,Café con leche,,60.0,6.3,3.3,bajo
 2026-04-24,08:00,Tostada con aceite y pavo,,230.0,33.3,6.3,medio
 2026-04-24,10:00,galletas de avena,,150.0,21.8,2.2,medio
@@ -870,12 +870,12 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-06-23,14:00,Cous cous con frutos secos y hamburguesa a la plancha ,,560.0,84.0,19.6,bajo
 2026-06-23,21:00,hamburguesa a la plancha con 3 onzas de queso de cabra ,,380.0,23.8,26.6,alto
 2026-06-23,21:00,Vaso de gazpacho ,,95.0,14.2,2.4,medio
-2026-06-19,21:00,Picoteo: patatillas y aceitunas,,0.0,,,
-2026-06-19,21:00,cuatro copas de vino blanco,,0.0,,,
-2026-06-19,23:45,McDonalds: Big Mac y 5 nuggets de pollo,,0.0,,,
-2026-06-26,09:30,Café con leche,,0.0,,,
-2026-06-26,09:30,dos tostadas de aceite queso de cabra y pavo,,0.0,,,
-2026-06-26,16:00,Huevos rellenos con atún y mayonesa (3 huevos),,0.0,,,
-2026-06-26,16:00,una tostada de pan,,0.0,,,
-2026-06-26,16:00,dos vasos de gazpacho,,0.0,,,
-2026-06-26,22:00,una bolsa entera de palomitas de microondas,,0.0,,,
+2026-06-19,21:00,Picoteo: patatillas y aceitunas,,215.0,16.0,2.5,alto
+2026-06-19,21:00,cuatro copas de vino blanco,,340.0,12.0,0.4,bajo
+2026-06-19,23:45,McDonalds: Big Mac y 5 nuggets de pollo,,725.0,55.0,36.0,alto
+2026-06-26,09:30,Café con leche,,100.0,10.0,6.5,bajo
+2026-06-26,09:30,dos tostadas de aceite queso de cabra y pavo,,385.0,32.0,19.5,medio
+2026-06-26,16:00,Huevos rellenos con atún y mayonesa (3 huevos),,490.0,2.0,30.5,medio
+2026-06-26,16:00,una tostada de pan,,80.0,15.0,2.5,medio
+2026-06-26,16:00,dos vasos de gazpacho,,180.0,14.0,2.5,medio
+2026-06-26,22:00,una bolsa entera de palomitas de microondas,,450.0,55.0,8.0,alto
