@@ -406,12 +406,16 @@ elif pagina == "Modelo de peso":
     _df["_sodio_alto"] = (_df.get("sodio_nivel", pd.Series(dtype=str)) == "alto").astype(float)
     _df["_sodio_valido"] = (_df.get("sodio_nivel", pd.Series(dtype=str)).notna() &
                             (_df.get("sodio_nivel", pd.Series(dtype=str)) != "")).astype(float)
+    # Hora última comida: horas desde medianoche (0–24)
+    _df["_hora_num"] = pd.to_datetime(_df["hora"], format="%H:%M", errors="coerce").dt.hour + \
+                       pd.to_datetime(_df["hora"], format="%H:%M", errors="coerce").dt.minute / 60.0
     df_food = _df.groupby("Fecha").agg(
         kcal_total=("calorías_estimadas", "sum"),
         kcal_alcohol=("_kcal_alc", "sum"),
         carbs_total=("_carbs", "sum"),
         sodio_alto_n=("_sodio_alto", "sum"),
         sodio_n=("_sodio_valido", "sum"),
+        hora_ultima=("_hora_num", "max"),
     ).reset_index()
     df_food["sodio_alto_frac"] = df_food["sodio_alto_n"] / df_food["sodio_n"].replace(0, np.nan)
 
@@ -450,14 +454,15 @@ elif pagina == "Modelo de peso":
         obs.append({
             "fecha": r2["Fecha"],
             "delta_dia": (r2["peso_kg"] - r1["peso_kg"]) / gap,
-            "superavit_medio": food_rows["superavit"].mean() if not food_rows.empty else np.nan,
-            "alcohol_medio":   food_rows["kcal_alcohol"].mean() if not food_rows.empty else 0.0,
-            "carbs_medio":     food_rows["carbs_total"].mean() if not food_rows.empty else np.nan,
-            "sodio_alto_frac": food_rows["sodio_alto_frac"].mean() if not food_rows.empty else np.nan,
-            "activo_medio":    period["activo_kcal"].mean(),
-            "sueño_medio":     period["horas_cama"].mean(),
-            "es_lutea":        period["es_lutea"].mean(),
-            "es_menstrual":    period["es_menstrual"].mean(),
+            "superavit_medio":   food_rows["superavit"].mean() if not food_rows.empty else np.nan,
+            "alcohol_medio":     food_rows["kcal_alcohol"].mean() if not food_rows.empty else 0.0,
+            "carbs_medio":       food_rows["carbs_total"].mean() if not food_rows.empty else np.nan,
+            "sodio_alto_frac":   food_rows["sodio_alto_frac"].mean() if not food_rows.empty else np.nan,
+            "hora_ultima_media": food_rows["hora_ultima"].mean() if not food_rows.empty else np.nan,
+            "activo_medio":      period["activo_kcal"].mean(),
+            "sueño_medio":       period["horas_cama"].mean(),
+            "es_lutea":          period["es_lutea"].mean(),
+            "es_menstrual":      period["es_menstrual"].mean(),
         })
 
     df_obs = pd.DataFrame(obs)
@@ -484,6 +489,10 @@ elif pagina == "Modelo de peso":
     n_sodio = df_obs["sodio_alto_frac"].notna().sum()
     if n_sodio >= 20:
         FEAT["sodio_alto_frac"] = "Fracción días sodio alto"
+    n_hora = df_obs["hora_ultima_media"].notna().sum()
+    if n_hora >= 10:
+        df_obs["hora_ultima_media"] = df_obs["hora_ultima_media"].fillna(df_obs["hora_ultima_media"].median())
+        FEAT["hora_ultima_media"] = "Hora última comida (media)"
 
     feat_keys = list(FEAT.keys())
     df_m = df_obs[feat_keys + ["delta_dia", "fecha"]].dropna(
