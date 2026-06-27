@@ -449,14 +449,12 @@ elif pagina == "Modelo de peso":
         st.warning("No hay suficientes datos para construir el modelo.")
         st.stop()
 
-    # Imputar activo con mediana cuando falte
-    df_obs["activo_medio"] = df_obs["activo_medio"].fillna(df_obs["activo_medio"].median())
-
     # ---- Selección de features ----
+    # activo_medio NO entra como predictor independiente: ya está restado dentro de superavit_medio.
+    # Incluirlo dos veces crea multicolinealidad y el coeficiente aparece con signo incorrecto.
     FEAT = {
         "superavit_medio": "Superávit calórico (kcal/día)",
         "alcohol_medio":   "Calorías alcohol (kcal/día)",
-        "activo_medio":    "Energía activa quemada (kcal/día)",
         "es_lutea":        "Fase lútea (fracción del período)",
         "es_menstrual":    "Fase menstrual (fracción del período)",
     }
@@ -466,18 +464,15 @@ elif pagina == "Modelo de peso":
         FEAT["sueño_medio"] = "Horas en cama (media del período)"
 
     feat_keys = list(FEAT.keys())
-    df_m = df_obs[feat_keys + ["delta_dia", "fecha"]].dropna()
-
-    st.caption(
-        f"Observaciones: **{len(df_m)}** pares de pesadas consecutivas (≤7 días) "
-        f"con datos de comida suficientes | Sueño disponible en {n_sueño} períodos"
+    df_m = df_obs[feat_keys + ["delta_dia", "fecha", "es_lutea", "es_menstrual"]].dropna(
+        subset=feat_keys + ["delta_dia"]
     )
 
     if len(df_m) < 10:
         st.warning(f"Solo {len(df_m)} observaciones completas. Añade más días con datos de comida.")
         st.stop()
 
-    # ---- Ridge regression (numpy) ----
+    # ---- Ridge regression (alpha=2.0 para estabilizar coeficientes de ciclo) ----
     X = df_m[feat_keys].values.astype(float)
     y = df_m["delta_dia"].values.astype(float)
 
@@ -486,23 +481,49 @@ elif pagina == "Modelo de peso":
     sigma[sigma == 0] = 1.0
     Xs = np.column_stack([np.ones(len(X)), (X - mu) / sigma])
 
-    alpha_r = 0.5
+    alpha_r = 2.0
     I_reg = np.diag([0.0] + [1.0] * len(feat_keys))
-    w = np.linalg.solve(Xs.T @ Xs + alpha_r * I_reg, Xs.T @ y)
 
-    y_hat   = Xs @ w
-    ss_res  = ((y - y_hat) ** 2).sum()
-    ss_tot  = ((y - y.mean()) ** 2).sum()
-    r2      = float(max(0.0, 1.0 - ss_res / ss_tot))
-    rmse    = float(np.sqrt(ss_res / len(y)))
+    def _ridge(Xs_, y_, alpha_):
+        A = Xs_.T @ Xs_ + alpha_ * np.diag([0.0] + [1.0] * (Xs_.shape[1] - 1))
+        return np.linalg.solve(A, Xs_.T @ y_)
+
+    w = _ridge(Xs, y, alpha_r)
+    y_hat  = Xs @ w
+    ss_res = ((y - y_hat) ** 2).sum()
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    r2     = float(max(0.0, 1.0 - ss_res / ss_tot))
+    rmse   = float(np.sqrt(ss_res / len(y)))
+
+    # LOO cross-validation (R² real sobre datos no vistos)
+    y_loo = np.zeros(len(y))
+    for _i in range(len(y)):
+        _mask = np.ones(len(y), dtype=bool); _mask[_i] = False
+        _w = _ridge(Xs[_mask], y[_mask], alpha_r)
+        y_loo[_i] = Xs[_i] @ _w
+    r2_loo = float(max(0.0, 1.0 - ((y - y_loo)**2).sum() / ss_tot))
 
     # ---- Métricas ----
-    c1, c2, c3 = st.columns(3)
-    c1.metric("R²", f"{r2:.2f}",
-              help="Fracción de la varianza del Δpeso explicada. 0 = el modelo no sirve, 1 = perfecto.")
-    c2.metric("Error típico", f"±{rmse * 1000:.0f} g/día",
-              help="Error medio de la predicción diaria del modelo.")
-    c3.metric("Observaciones", len(df_m))
+    st.caption(
+        f"**{len(df_m)}** pares de pesadas consecutivas (≤7 días) con datos de comida · "
+        f"Sueño disponible en {n_sueño} períodos"
+    )
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("R² (ajuste)", f"{r2:.2f}",
+              help="Varianza de Δpeso explicada sobre los datos de entrenamiento.")
+    c2.metric("R² (LOO)", f"{r2_loo:.2f}",
+              help="R² real estimado mediante leave-one-out. Si es mucho menor que R² ajuste, hay sobreajuste.")
+    c3.metric("Error típico", f"±{rmse * 1000:.0f} g/día")
+    c4.metric("Observaciones", len(df_m))
+
+    # ---- N por fase (diagnóstico de estabilidad) ----
+    df_m = df_m.copy()
+    df_m["fase"] = df_m.apply(
+        lambda r: "Menstrual" if r["es_menstrual"] > 0.5
+        else ("Lútea" if r["es_lutea"] > 0.5 else "Folicular"),
+        axis=1
+    )
+    n_por_fase = df_m["fase"].value_counts().to_dict()
 
     # ---- Tabla de coeficientes ----
     st.subheader("¿Qué explica los cambios de peso?")
@@ -515,8 +536,23 @@ elif pagina == "Modelo de peso":
     }).sort_values("Importancia relativa (%)", ascending=False).reset_index(drop=True)
     st.dataframe(df_coef, use_container_width=True)
     st.caption(
-        "**Efecto por unidad**: cuántos g/día cambia el peso por cada kcal extra de superávit, "
-        "cada hora de sueño, etc. **Importancia relativa**: peso de cada variable en el modelo."
+        "Para las variables de ciclo (fracción 0–1): el efecto es el máximo al pasar el período entero "
+        "en esa fase. Con pocos datos por fase los coeficientes son inestables — ver N por fase abajo."
+    )
+
+    # ---- Efecto crudo por fase (sin modelo, solo descriptivo) ----
+    st.subheader("Efecto crudo del ciclo — sin modelo")
+    raw_fase = (df_m.groupby("fase")["delta_dia"]
+                .agg(n="count", media_g=lambda x: x.mean() * 1000, std_g=lambda x: x.std() * 1000)
+                .reset_index())
+    raw_fase.columns = ["Fase", "N observaciones", "Δ Peso medio (g/día)", "Desv. típica (g/día)"]
+    raw_fase["Δ Peso medio (g/día)"] = raw_fase["Δ Peso medio (g/día)"].round(1)
+    raw_fase["Desv. típica (g/día)"] = raw_fase["Desv. típica (g/día)"].round(1)
+    st.dataframe(raw_fase.sort_values("Fase"), use_container_width=True)
+    st.caption(
+        "Esta tabla no depende del modelo. Si la media de Δpeso en fase menstrual es negativa "
+        "y en fase lútea positiva, el efecto del ciclo es real en tus datos. "
+        "Si la N es <8, interpreta con mucha cautela."
     )
 
     # ---- Gráfica predicción vs real ----
@@ -540,11 +576,6 @@ elif pagina == "Modelo de peso":
     st.subheader("Residuos por fase del ciclo")
     df_res = df_m.copy()
     df_res["residuo_g"] = (y - y_hat) * 1000
-    df_res["fase"] = df_res.apply(
-        lambda r: "Menstrual" if r["es_menstrual"] > 0.5
-        else ("Lútea" if r["es_lutea"] > 0.5 else "Folicular"),
-        axis=1
-    )
     fig_b = px.box(
         df_res, x="fase", y="residuo_g", color="fase",
         color_discrete_map={"Menstrual": "#e74c3c", "Folicular": "#2ecc71", "Lútea": "#f39c12"},
@@ -553,6 +584,6 @@ elif pagina == "Modelo de peso":
     fig_b.add_hline(y=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig_b, use_container_width=True)
     st.caption(
-        "Residuos positivos = el peso subió más de lo predicho por el modelo. "
-        "Si una fase tiene residuos sistemáticamente altos, esa variable necesita más peso en el modelo."
+        "Residuos positivos = el peso subió más de lo predicho. "
+        "Si los residuos de lútea son sistemáticamente positivos, el modelo está subestimando la retención de agua del ciclo."
     )
