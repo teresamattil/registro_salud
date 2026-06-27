@@ -51,6 +51,9 @@ df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
 # ---------------- MENU VISUAL ----------------
 
+if "pending_nav" in st.session_state:
+    st.session_state["menu_nav"] = st.session_state.pop("pending_nav")
+
 pagina = option_menu(
     menu_title=None,
     options=["Resumen diario", "Registro", "Peso & Calorías", "Estimación"],
@@ -171,7 +174,7 @@ elif pagina == "Registro":
         with col3:
             if st.button("Ir", key=f"ir_{dia_r}"):
                 st.session_state.dia_seleccionado = dia_r
-                st.session_state["menu_nav"] = "Resumen diario"
+                st.session_state["pending_nav"] = "Resumen diario"
                 st.rerun()
 
 # ---------------- PÁGINA 3 ----------------
