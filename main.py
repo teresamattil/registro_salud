@@ -636,16 +636,23 @@ elif pagina == "Modelo de peso":
         "Si la N es <8, interpreta con mucha cautela."
     )
 
-    # ---- Gráfica predicción vs real ----
-    st.subheader("Predicción vs realidad")
-    fechas_plot = df_m["fecha"].tolist()
+    # ---- Gráfica predicción vs real (último mes) ----
+    st.subheader("Predicción vs realidad — último mes")
+    cutoff_30 = date.today() - pd.Timedelta(days=30)
+    mask_30 = np.array([f >= cutoff_30 for f in df_m["fecha"]])
+    if mask_30.sum() < 3:
+        st.caption("Menos de 3 observaciones en el último mes — mostrando histórico completo.")
+        mask_30 = np.ones(len(df_m), dtype=bool)
+    fechas_30 = [f for f, m in zip(df_m["fecha"].tolist(), mask_30) if m]
+    y_30      = y[mask_30]
+    yhat_30   = y_hat[mask_30]
     fig_m = go.Figure()
     fig_m.add_trace(go.Scatter(
-        x=fechas_plot, y=(y * 1000).tolist(),
+        x=fechas_30, y=(y_30 * 1000).tolist(),
         name="Δ Peso real (g/día)", mode="lines+markers", line=dict(color="#e74c3c")
     ))
     fig_m.add_trace(go.Scatter(
-        x=fechas_plot, y=(y_hat * 1000).tolist(),
+        x=fechas_30, y=(yhat_30 * 1000).tolist(),
         name="Δ Peso estimado (g/día)", mode="lines+markers",
         line=dict(color="#115a8e", dash="dash")
     ))
