@@ -28,7 +28,7 @@ model = genai.GenerativeModel("gemini-3-flash-preview")
 def load_data():
     r = requests.get(API_URL, headers=HEADERS).json()
     if "content" not in r:
-        return pd.DataFrame(columns=["Fecha","hora","comida","ruta_foto","calorías_estimadas"])
+        return pd.DataFrame(columns=["Fecha","hora","comida","calorías_estimadas"])
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
 
@@ -127,7 +127,6 @@ if pagina == "Resumen diario":
         f = st.date_input("Fecha", st.session_state.dia_seleccionado)
         h = st.time_input("Hora", st.session_state.hora_seleccionada)
         c = st.text_input("Comida")
-        r = st.text_input("Ruta foto")
         k = st.number_input("Calorías estimadas", min_value=0)
         submit = st.form_submit_button("Guardar")
 
@@ -140,7 +139,6 @@ if pagina == "Resumen diario":
             "Fecha": f,
             "hora": h.strftime("%H:%M"),
             "comida": c,
-            "ruta_foto": r,
             "calorías_estimadas": k
         }
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
@@ -269,7 +267,7 @@ elif pagina == "Estimación":
         st.stop()
 
     st.write(f"Filas pendientes: {len(pendientes)}")
-    st.dataframe(pendientes[["Fecha","hora","comida","ruta_foto","calorías_estimadas"]], use_container_width=True)
+    st.dataframe(pendientes[["Fecha","hora","comida","calorías_estimadas"]], use_container_width=True)
     
     csv_text = pendientes.rename(columns={
         "Fecha":"fecha",
