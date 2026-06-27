@@ -34,7 +34,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-11-27,18:35,Cafe con leche (8am),,90.0,9.4,5.0,bajo
 2025-11-27,18:36,Pure de zanahoria con tostada pan,,250.0,36.2,6.9,medio
 2025-11-27,21:14,tostada philadelphia y tomate,2025-11-27_21-14,220.0,31.9,6.0,medio
-2025-11-27,22:55,whiskey cola,,200.0,2.5,0,medio
+2025-11-27,22:55,whiskey cola,,200.0,2.5,0.0,medio
 2025-11-28,09:07,Cafe con leche,2025-11-28_09-07,90.0,9.4,5.0,bajo
 2025-11-28,09:12,tostada aceite y tomate,2025-11-28_09-12,200.0,29.0,5.5,medio
 2025-11-28,15:00,Solomillitos y patatas al horno,2025-11-28_15-00,650.0,100.8,11.4,medio
@@ -116,7 +116,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-11,17:59,Solomillo al horno de mostaza y ensalada,,500.0,2.5,60.0,medio
 2025-12-11,18:01,Cena de tapeo (raciones pequeñas): calamares+pulpo a la gallega+ensalada de tomate+almejas+entrecot,,750.0,3.8,105.0,medio
 2025-12-11,18:02,2 cervezas,,180.0,20.2,1.8,medio
-2025-12-11,18:02,2 whiskey con cocacola zero,,220.0,2.8,0,medio
+2025-12-11,18:02,2 whiskey con cocacola zero,,220.0,2.8,0.0,medio
 2025-12-10,20:00,5 tacos de maiz (carnitas+quesadas...),,750.0,75.0,37.5,medio
 2025-12-10,20:00,1 quinto de quesadilla de carne,,180.0,18.0,9.0,medio
 2025-12-14,21:00,Cerveza,,90.0,10.1,0.9,medio
@@ -137,7 +137,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-16,08:15,Café con leche,,100.0,10.5,5.5,bajo
 2025-12-16,14:00,Berenjena rellena con bechamel y queso,,450.0,22.5,11.2,medio
 2025-12-16,19:00,Sabdwich philadelphia y jamon york,,320.0,1.6,40.0,alto
-2025-12-16,19:00,cola de caballo ,,120.0,1.0,0,bajo
+2025-12-16,19:00,cola de caballo ,,120.0,1.0,0.0,bajo
 2025-12-16,21:30,Tortilla dos huevos Jamon queso y tomate,,400.0,4.0,30.0,alto
 2025-12-18,07:15,Cafe con leche,,100.0,10.5,5.5,bajo
 2025-12-18,07:15,Tostada de aceite jamon cocido y tomate,,280.0,40.6,7.7,alto
@@ -155,7 +155,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-18,21:00,Canelón de rabo de toro (1 unidad porcion para picar),,180.0,0.9,21.6,medio
 2025-12-18,21:00,2 tacos de brisket con guacamole,,320.0,32.0,16.0,medio
 2025-12-18,21:00,2 porciones costillas angus,,450.0,2.2,42.8,medio
-2025-12-18,23:00,Whiskey cocacola zero,,110.0,1.4,0,medio
+2025-12-18,23:00,Whiskey cocacola zero,,110.0,1.4,0.0,medio
 2025-12-18,08:00,café con leche,,100.0,10.5,5.5,bajo
 2025-12-19,08:00,café con leche,,100.0,10.5,5.5,bajo
 2025-12-19,10:00,Tostada y media con aceite,,250.0,36.2,6.9,medio
@@ -170,11 +170,11 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-20,14:00,Picoteo aperitivo: patatas zanahorias con queso derretido+lomo+aceitunas...,,600.0,7.5,37.5,alto
 2025-12-20,14:30,Hojaldre de champiñones,,300.0,28.5,11.2,medio
 2025-12-20,14:30,2 copas vino tinto,,240.0,10.8,0.6,medio
-2025-12-20,14:30,crema de orujo chupito,,90.0,1.1,0,medio
-2025-12-20,16:00,2 Whiskey coca cola zero,,220.0,2.8,0,medio
+2025-12-20,14:30,crema de orujo chupito,,90.0,1.1,0.0,medio
+2025-12-20,16:00,2 Whiskey coca cola zero,,220.0,2.8,0.0,medio
 2025-12-20,15:30,Porcion pequeña tarta de limón,,220.0,26.4,4.4,medio
 2025-12-20,20:30,Media pizza barbacoa,,650.0,68.2,29.2,alto
-2025-12-20,20:30,3 whiskey coca cola zero,,330.0,4.1,0,medio
+2025-12-20,20:30,3 whiskey coca cola zero,,330.0,4.1,0.0,medio
 2025-12-21,11:01,Café con leche,,100.0,10.5,5.5,bajo
 2025-12-21,06:03,Tostada bimbo con aceite,,200.0,29.0,5.5,medio
 2025-12-21,06:04,Cerveza,,90.0,10.1,0.9,medio
@@ -182,7 +182,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-21,06:07,Hojaldre calabacin queso de cabra y tomate seco (1 porciones),,300.0,28.5,11.2,alto
 2025-12-21,06:07,Steak tartar con tostas,,450.0,65.2,12.4,alto
 2025-12-22,13:16,Dos tostadas pan bimbo y aceite ,,400.0,58.0,11.0,medio
-2025-12-22,13:16,Cola de caballo,,2.0,1.0,0,bajo
+2025-12-22,13:16,Cola de caballo,,2.0,1.0,0.0,bajo
 2025-12-22,13:56,Pollo teriyaki mercadona,,489.0,2.4,73.3,medio
 2025-12-21,13:51,3 copas de vino blanco,,360.0,16.2,0.9,medio
 2025-12-21,13:51,Ensalada de tomate y mozarella,,250.0,15.6,11.2,medio
@@ -214,7 +214,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-25,14:00,3 copas vino blanco,,360.0,16.2,0.9,medio
 2025-12-25,14:00,Rossbeaf+ensalada puerro+patatas pequeñas al horno y pimientos,,550.0,85.2,9.6,medio
 2025-12-25,15:45,Café con leche,,100.0,10.5,5.5,bajo
-2025-12-25,17:30,dos Whiskey cocacola zero,,220.0,2.8,0,medio
+2025-12-25,17:30,dos Whiskey cocacola zero,,220.0,2.8,0.0,medio
 2025-12-25,22:00,Media bolsa de palomitas con sal al microondas,,220.0,33.0,4.4,alto
 2025-12-25,22:00,1 tostada aceite y jamon york2,,200.0,29.0,5.5,alto
 2025-12-26,09:30,Café con leche,,100.0,10.5,5.5,bajo
@@ -222,13 +222,13 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-26,17:00,Quesadilla Jamón y queso,,350.0,35.0,17.5,alto
 2025-12-26,17:00,Tostada aceite y jamón york,,250.0,36.2,6.9,alto
 2025-12-26,21:00,Patatas bolsa porcion pequeña,,180.0,17.1,9.9,medio
-2025-12-26,19:30,Infusion Cola de caballo,,2.0,1.0,0,bajo
+2025-12-26,19:30,Infusion Cola de caballo,,2.0,1.0,0.0,bajo
 2025-12-27,09:00,Café con leche,,100.0,10.5,5.5,bajo
 2025-12-27,12:45,Café con leche,,100.0,10.5,5.5,bajo
 2025-12-27,14:30,Cerveza,,90.0,10.1,0.9,medio
 2025-12-27,14:30,Huevos rotos con chistorra,,600.0,6.0,45.0,alto
 2025-12-27,21:00,Cerveza,,90.0,10.1,0.9,medio
-2025-12-27,22:30,Tres whisky coca cola zero,,330.0,4.1,0,medio
+2025-12-27,22:30,Tres whisky coca cola zero,,330.0,4.1,0.0,medio
 2025-12-28,09:00,Café con leche,,100.0,10.5,5.5,bajo
 2025-12-28,09:00,2 tostadas aceite y jamon york,,400.0,58.0,11.0,alto
 2025-12-28,09:30,medio cinamon roll,,300.0,37.5,7.5,medio
@@ -251,7 +251,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2025-12-30,14:30,Cerveza,,90.0,10.1,0.9,medio
 2025-12-30,14:30,Ensaladilla rusa media tapa,,200.0,19.0,11.0,alto
 2025-12-30,14:30,Media todta de aceite tomate y jamon con queso de cabra,,250.0,1.2,31.2,alto
-2025-12-30,19:30,Whiskey coca cola zero,,110.0,1.4,0,medio
+2025-12-30,19:30,Whiskey coca cola zero,,110.0,1.4,0.0,medio
 2025-12-30,19:30,Pretzel,,200.0,19.0,11.0,alto
 2025-12-30,21:30,medio bocata bacon y queso,,350.0,4.4,21.9,alto
 2025-12-31,09:15,3 cafes con leche,,300.0,31.5,16.5,bajo
@@ -291,22 +291,22 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-09,08:00,Tostada con aceite y pavo,,180.0,26.1,5.0,medio
 2026-01-09,15:00,Berza con tomate y huevo frito ,,350.0,33.2,13.1,medio
 2026-01-09,17:00,Bollo tigreton,,200.0,25.0,5.0,medio
-2026-01-09,18:15,Cola de caballo,,2.0,1.0,0,bajo
+2026-01-09,18:15,Cola de caballo,,2.0,1.0,0.0,bajo
 2026-01-09,21:00,Cena picoteo: sandwichitos jamones y queso+ croissant alioli y pavo + tortilla de patata,,900.0,112.5,22.5,alto
 2026-01-09,22:00,2 cervezas,,300.0,33.8,3.0,medio
-2026-01-09,23:30,3 Whiskey coca cola cero,,330.0,4.1,0,medio
+2026-01-09,23:30,3 Whiskey coca cola cero,,330.0,4.1,0.0,medio
 2026-01-10,12:00,Cafe con leche,,80.0,8.4,4.4,bajo
 2026-01-10,12:00,2 tostadas aceite y pavo,,360.0,52.2,9.9,medio
 2026-01-10,16:00,Albóndigas (5) con salsa de pimiento y cebolla y ningún acompañamiento,,450.0,20.2,39.4,medio
 2026-01-10,16:45,postre: tiramisú ,,350.0,48.1,6.1,medio
 2026-01-10,21:30,Cena picoteo: patatas light+queso untable+tostas ensaladilla+pizza philadelphia y bacon,,1000.0,145.0,27.5,alto
 2026-01-10,22:30,3 copas vino blanco,,360.0,16.2,0.9,medio
-2026-01-10,23:45,2 whiskey coca cola cero,,220.0,2.8,0,medio
+2026-01-10,23:45,2 whiskey coca cola cero,,220.0,2.8,0.0,medio
 2026-01-02,14:00,Bocata camembert jamon y mayonesa,,600.0,3.0,75.0,alto
 2026-01-02,15:00,Cafe con leche y bollito de leche con chocolate ,,300.0,31.5,16.5,bajo
 2026-01-02,19:00,Patatas y doritos ,,300.0,28.5,16.5,alto
 2026-01-02,21:30,Dos cervezas,,300.0,33.8,3.0,medio
-2026-01-02,23:30,Whiskey coca cola cero,,110.0,1.4,0,medio
+2026-01-02,23:30,Whiskey coca cola cero,,110.0,1.4,0.0,medio
 2026-01-02,23:30,Media pizza jamon y queso masa fina (restaurante),,500.0,52.5,22.5,alto
 2026-01-06,14:30,Costillas al horno y patatas fritas ,,800.0,124.0,14.0,medio
 2026-01-06,15:15,trozo pequeño roscón de reyes con nata,,300.0,37.5,7.5,medio
@@ -318,7 +318,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-11,15:30,Copa de vino blanco,,120.0,5.4,0.3,medio
 2026-01-11,16:00,Cafe con leche mini,,50.0,5.2,2.8,bajo
 2026-01-11,16:00,3 trozos turrón chocolate suchard,,250.0,34.4,4.4,medio
-2026-01-11,19:30,Infusion cola de caballo,,2.0,1.0,0,bajo
+2026-01-11,19:30,Infusion cola de caballo,,2.0,1.0,0.0,bajo
 2026-01-11,21:00,Sopa de fideos de pollo,,250.0,36.2,8.8,medio
 2026-01-11,21:00,Revuelto de setas,,250.0,23.8,9.4,medio
 2026-01-12,08:00,Cafe con leche,,80.0,8.4,4.4,bajo
@@ -344,7 +344,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-15,20:30,Arroz con pollo al curry,,480.0,81.6,14.4,medio
 2026-01-15,21:00,helado de caramelo hagen duzz (un bol),,380.0,52.3,6.7,medio
 2025-12-31,15:00,Sopa de patata,,180.0,15.7,5.4,medio
-2025-12-31,15:30,turron de chocolate,,210.0,2.6,0,medio
+2025-12-31,15:30,turron de chocolate,,210.0,2.6,0.0,medio
 2025-12-31,20:00,Aperitivo: tostas de foie y queso,,320.0,46.4,8.8,alto
 2025-12-31,21:30,Fondue de carne con salsas de mayonesa y especias,,650.0,61.8,35.8,medio
 2025-12-31,21:30,acompañamiento: patatas lays campesinas,,190.0,18.1,10.4,alto
@@ -360,7 +360,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-13,21:00,Puñado de picos de pan,,100.0,14.5,2.8,medio
 2026-01-16,19:30,tortilla dos huevos con queso y pavo,,350.0,3.5,26.2,medio
 2026-01-16,22:00,3 copas de vino blanco,,246.0,11.1,0.6,medio
-2026-01-16,23:00,sorbos de gin tonic,,60.0,0.8,0,medio
+2026-01-16,23:00,sorbos de gin tonic,,60.0,0.8,0.0,medio
 2026-01-17,09:15,Cafe con leche,,65.0,6.8,3.6,bajo
 2026-01-17,09:15,Tostada de aceite y pavo,,260.0,37.7,7.2,medio
 2026-01-17,16:00,Sandwich de salsa pollo al curry,,420.0,2.1,63.0,medio
@@ -385,9 +385,9 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-03,14:30,2 cervezas,,300.0,33.8,3.0,medio
 2026-01-03,15:00,Carne de cerdo con salsa de tomate y arroz blanco,,550.0,93.5,16.5,medio
 2026-01-03,15:00,3 copas de vino tinto,,375.0,16.9,0.9,medio
-2026-01-03,16:45,3 whiskey cola cero,,345.0,4.3,0,medio
+2026-01-03,16:45,3 whiskey cola cero,,345.0,4.3,0.0,medio
 2026-01-03,21:00,Sandwichitos (5) de jamon y queso,,600.0,3.0,75.0,alto
-2026-01-03,23:30,1 whiskey coca cola cero,,115.0,1.4,0,medio
+2026-01-03,23:30,1 whiskey coca cola cero,,115.0,1.4,0.0,medio
 2026-01-03,23:30,1 cerveza,,150.0,16.9,1.5,medio
 2026-01-20,08:00,Café con leche,,70.0,7.3,3.9,bajo
 2026-01-20,12:00,Tostada de aceite y pavo,,280.0,40.6,7.7,medio
@@ -424,7 +424,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-23,21:00,Puñado de quicos,,115.0,5.2,3.7,medio
 2026-01-23,20:24,2 filetes de ternera empandos,,520.0,2.6,62.4,medio
 2026-01-23,23:00,5 cervezas,,725.0,81.6,7.2,medio
-2026-01-23,23:00,2 whiskey coca cola zero,,250.0,3.1,0,medio
+2026-01-23,23:00,2 whiskey coca cola zero,,250.0,3.1,0.0,medio
 2026-01-23,23:00,cookie de chocolate,,210.0,30.4,3.1,medio
 2026-01-24,21:15,Papadelta,,250.0,23.8,13.8,alto
 2026-01-24,13:00,Cafe con leche,,60.0,6.3,3.3,bajo
@@ -500,8 +500,8 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-01-30,20:00,3 cervezas,,450.0,50.6,4.5,medio
 2026-01-30,20:00,2 copas vino blanco,,240.0,10.8,0.6,medio
 2026-01-30,20:00,4 mini tostas de atun/queso cerma y salmon/ ensaladilla de cangrejo/setas,,420.0,39.9,15.8,alto
-2026-01-30,23:30,Whiskey coca cola cero,,110.0,1.4,0,medio
-2026-01-30,23:45,Whiskey coca cola cero,,110.0,1.4,0,medio
+2026-01-30,23:30,Whiskey coca cola cero,,110.0,1.4,0.0,medio
+2026-01-30,23:45,Whiskey coca cola cero,,110.0,1.4,0.0,medio
 2026-01-29,11:00,Café  con leche pequeño,,50.0,5.2,2.8,bajo
 2026-01-29,11:00,Plátano,,95.0,20.4,1.0,bajo
 2026-01-29,12:30,2 mandarinas,,75.0,16.1,0.8,bajo
@@ -525,7 +525,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-02-05,08:00,Café con leche,,65.0,6.8,3.6,bajo
 2026-02-05,14:30,6 piezas de sushi de langostino con aguacate,,270.0,1.4,37.8,bajo
 2026-02-05,14:30,2 panes brioche de pato con salsa,,520.0,49.4,28.6,medio
-2026-02-05,14:30,Coca cola zero,,2.0,1.0,0,medio
+2026-02-05,14:30,Coca cola zero,,2.0,1.0,0.0,medio
 2026-02-05,17:30,Café con leche pequeño,,45.0,4.7,2.5,bajo
 2026-02-05,20:00,Cerveza,,150.0,16.9,1.5,medio
 2026-02-05,20:00,2 croquetas,,160.0,12.8,7.2,alto
@@ -536,7 +536,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-02-06,16:00,Arroz tres delicias,,450.0,76.5,13.5,medio
 2026-02-06,16:00,nuggets de pollo,,290.0,20.3,21.8,alto
 2026-02-06,16:00,4 galletas de chocolate (moscovitas),,220.0,31.9,3.3,medio
-2026-02-06,19:00,Infusión cola de caballo,,2.0,1.0,0,bajo
+2026-02-06,19:00,Infusión cola de caballo,,2.0,1.0,0.0,bajo
 2026-02-06,19:00,Trozo tarda de queso al horno,,380.0,4.8,23.8,medio
 2026-02-10,07:30,Cafe con leche,,70.0,7.3,3.9,bajo
 2026-02-10,11:00,Platano,,95.0,20.4,1.0,bajo
@@ -568,7 +568,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-02-13,20:00,una copa de vino blanco verdejo,,120.0,5.4,0.3,medio
 2026-02-13,21:45,Hamburguesa de vacuno y patatas fritas,,850.0,131.8,14.9,medio
 2026-02-13,22:00,una cerveza,,150.0,16.9,1.5,medio
-2026-02-13,23:30,whiskey coca cola zero,,110.0,1.4,0,medio
+2026-02-13,23:30,whiskey coca cola zero,,110.0,1.4,0.0,medio
 2026-02-19,13:55,Pincho de tortilla con pan,,350.0,50.8,9.6,medio
 2026-02-19,08:00,Café con leche,,70.0,7.3,3.9,bajo
 2026-02-25,14:30,Pure de patata guisantes con jamón y pechuga de pollo a la plancha,,450.0,69.8,7.9,alto
@@ -631,11 +631,11 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-04-11,14:00,Arroz con pollo al curry,,550.0,93.5,16.5,medio
 2026-04-11,21:30,3 tacos cochinita pibil,,450.0,45.0,22.5,medio
 2026-04-11,21:30,2 dobles de cerveza,,320.0,36.0,3.2,medio
-2026-04-11,22:30,un whiskey coca cola zero,,125.0,1.6,0,medio
+2026-04-11,22:30,un whiskey coca cola zero,,125.0,1.6,0.0,medio
 2026-04-11,22:30,media pizza margarita casera masa fina,,425.0,44.6,19.1,alto
-2026-04-11,23:00,Whiskey coca cola zero,,125.0,1.6,0,medio
-2026-04-11,23:00,Media copa whiskey coca cola zero,,63.0,0.8,0,medio
-2026-04-11,23:45,chupito de jagermeister,,75.0,0.9,0,medio
+2026-04-11,23:00,Whiskey coca cola zero,,125.0,1.6,0.0,medio
+2026-04-11,23:00,Media copa whiskey coca cola zero,,63.0,0.8,0.0,medio
+2026-04-11,23:45,chupito de jagermeister,,75.0,0.9,0.0,medio
 2026-04-14,14:00,Guisantes con hamburguesa a la plancha,,380.0,23.8,26.6,medio
 2026-04-14,11:30,Platano,,95.0,20.4,1.0,bajo
 2026-04-14,11:30,Café con leche pequeño,,70.0,7.3,3.9,bajo
@@ -654,13 +654,13 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-04-17,11:30,Sanwich jamon y queso comprado,,350.0,1.8,43.8,alto
 2026-04-17,11:30,Vasito pequeño colacao,,155.0,24.0,5.8,medio
 2026-04-17,15:00,Gnocchi con salsa de setas,,520.0,49.4,19.5,medio
-2026-04-17,17:00,Whiskey coca cola zero,,130.0,1.6,0,medio
-2026-04-17,19:00,Whiskey coca cola zero,,130.0,1.6,0,medio
+2026-04-17,17:00,Whiskey coca cola zero,,130.0,1.6,0.0,medio
+2026-04-17,19:00,Whiskey coca cola zero,,130.0,1.6,0.0,medio
 2026-04-17,21:00,2 Copas de verdejo,,180.0,8.1,0.5,medio
 2026-04-17,21:00,4 croquetas de jamon,,280.0,1.4,35.0,alto
 2026-04-17,21:00,racion de nachos con guacamole y mousse de salmon,,650.0,3.2,91.0,alto
 2026-04-17,23:00,copa vino blanco verdejo,,90.0,4.0,0.2,medio
-2026-04-17,23:45,whiskey coca cola zero,,130.0,1.6,0,medio
+2026-04-17,23:45,whiskey coca cola zero,,130.0,1.6,0.0,medio
 2026-04-18,11:00,Café con leche,,50.0,5.2,2.8,bajo
 2026-04-18,11:00,Tostada de aceite y pavo,,290.0,42.0,8.0,medio
 2026-04-18,14:30,Aperitivo: croquetas+tartar de atun+ lomo+ chistorra ,,450.0,2.2,63.0,alto
@@ -668,8 +668,8 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-04-18,15:30,Carrilleras de ternera con patatas fritas,,680.0,105.4,11.9,medio
 2026-04-18,15:30,copa de vino tinto,,95.0,4.3,0.2,medio
 2026-04-18,16:00,Trozo de tarta red velvet,,450.0,54.0,9.0,medio
-2026-04-18,16:00,copa de cava,,80.0,1.0,0,medio
-2026-04-18,17:00,medio whiskey coca cola zero,,65.0,0.8,0,medio
+2026-04-18,16:00,copa de cava,,80.0,1.0,0.0,medio
+2026-04-18,17:00,medio whiskey coca cola zero,,65.0,0.8,0.0,medio
 2026-04-18,22:00,yatekomo yakisoba,,415.0,43.6,22.8,alto
 2026-04-19,09:30,Café con leche,,50.0,5.2,2.8,bajo
 2026-04-19,09:30,Todtada con aceite y pavo,,290.0,1.4,36.2,medio
@@ -753,7 +753,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-05-30,17:15,cerveza 25 cl,,105.0,11.8,1.1,medio
 2026-05-30,23:00,cerveza,,145.0,16.3,1.4,medio
 2026-05-30,23:00,picoteo aceitunas y cebolletas ,,75.0,7.1,4.1,alto
-2026-05-30,23:00,tres whiskeys con coca cola cero,,345.0,4.3,0,medio
+2026-05-30,23:00,tres whiskeys con coca cola cero,,345.0,4.3,0.0,medio
 2026-05-29,13:00,Melon,,60.0,12.9,0.6,bajo
 2026-05-29,16:00,Tostada de revuelto de gulas,,320.0,46.4,8.8,medio
 2026-05-29,16:00,vaso de gazpacho ,,85.0,12.8,2.1,medio
@@ -858,7 +858,7 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-06-20,15:00,Tostada de queso de cabra derretido con jamon cocido,,380.0,55.1,10.4,alto
 2026-06-20,22:00,Pizza barbacoa telepizza entera,,1950.0,204.8,87.8,alto
 2026-06-20,22:00,dos cervezas mahou,,300.0,33.8,3.0,medio
-2026-06-20,23:45,tres copas whisky coca cola zero,,330.0,4.1,0,medio
+2026-06-20,23:45,tres copas whisky coca cola zero,,330.0,4.1,0.0,medio
 2026-06-19,12:00,Saquito chino de arroz con panceta,,180.0,30.6,5.4,alto
 2026-06-19,16:00,Vaso de gazpacho ,,110.0,16.5,2.8,medio
 2026-06-19,13:04,Tostada de queso de cabra fundido y Jamon cocido,,380.0,55.1,10.4,alto
@@ -873,3 +873,4 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-06-19,21:00,Picoteo: patatillas y aceitunas,,0.0,,,
 2026-06-19,21:00,cuatro copas de vino blanco,,0.0,,,
 2026-06-19,23:45,McDonalds: Big Mac y 5 nuggets de pollo,,0.0,,,
+2026-06-26,09:30,Café con leche,,0.0,,,
