@@ -31,6 +31,12 @@ def load_data():
     content = base64.b64decode(r["content"])
     return pd.read_csv(pd.io.common.BytesIO(content))
 
+def save_data(df, message):
+    r_api = requests.get(API_URL, headers=HEADERS).json()
+    sha = r_api["sha"]
+    content = base64.b64encode(df.to_csv(index=False).encode()).decode()
+    requests.put(API_URL, headers=HEADERS, json={"message": message, "content": content, "sha": sha})
+
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
@@ -61,7 +67,11 @@ if pagina == "Resumen diario":
     porcentaje = min(consumidas / objetivo, 1.0)
 
     st.markdown(f"**Calorías consumidas:** {consumidas} / {objetivo} kcal")
-    st.progress(porcentaje)
+    color = "#2ecc71" if porcentaje < 0.8 else "#f39c12" if porcentaje < 1.0 else "#e74c3c"
+    st.markdown(f"""
+    <div style="background:#e0e0e0;border-radius:6px;height:20px;margin-bottom:1rem">
+      <div style="background:{color};width:{min(porcentaje,1)*100:.1f}%;height:20px;border-radius:6px;transition:width .3s"></div>
+    </div>""", unsafe_allow_html=True)
 
     # Tabla editable con checkbox para borrar
     df_edit = df_dia[["Fecha", "hora", "comida", "calorías_estimadas"]].copy()
@@ -82,22 +92,7 @@ if pagina == "Resumen diario":
 
         # Eliminar del dataframe global usando los índices reales
         df = df.drop(idx_borrar)
-
-        r_api = requests.get(API_URL, headers=HEADERS).json()
-        sha = r_api["sha"]
-
-        csv = df.to_csv(index=False)
-        content = base64.b64encode(csv.encode()).decode()
-
-        requests.put(
-            API_URL,
-            headers=HEADERS,
-            json={
-                "message": "Borrar comidas",
-                "content": content,
-                "sha": sha
-            }
-        )
+        save_data(df, "Borrar comidas")
 
         st.cache_data.clear()
         st.rerun()
@@ -115,10 +110,10 @@ if pagina == "Resumen diario":
         submit = st.form_submit_button("Guardar")
 
     if submit:
+        if not c:
+            st.warning("El nombre de la comida no puede estar vacío")
+            st.stop()
         st.session_state.hora_seleccionada = h
-        r_api = requests.get(API_URL, headers=HEADERS).json()
-        sha = r_api["sha"]
-
         new_row = {
             "Fecha": f,
             "hora": h.strftime("%H:%M"),
@@ -126,21 +121,8 @@ if pagina == "Resumen diario":
             "ruta_foto": r,
             "calorías_estimadas": k
         }
-
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-
-        csv = df.to_csv(index=False)
-        content = base64.b64encode(csv.encode()).decode()
-
-        requests.put(
-            API_URL,
-            headers=HEADERS,
-            json={
-                "message": "Añadir comida",
-                "content": content,
-                "sha": sha
-            }
-        )
+        save_data(df, "Añadir comida")
 
         st.cache_data.clear()
         st.rerun()
@@ -282,17 +264,7 @@ No añadas explicaciones ni texto adicional. Devuelve únicamente el bloque de c
         df["calorías_estimadas"] = df["calorías_estimadas_new"].fillna(df["calorías_estimadas"])
         df = df.drop(columns=["calorías_estimadas_new"])
 
-        r_api = requests.get(API_URL, headers=HEADERS).json()
-        sha = r_api["sha"]
-
-        csv_final = df.to_csv(index=False)
-        content = base64.b64encode(csv_final.encode()).decode()
-
-        requests.put(
-            API_URL,
-            headers=HEADERS,
-            json={"message": "Estimar calorías automáticamente", "content": content, "sha": sha}
-        )
+        save_data(df, "Estimar calorías automáticamente")
 
         st.cache_data.clear()
         st.success("Estimación completada")
