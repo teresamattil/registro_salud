@@ -15,28 +15,74 @@ st.set_page_config(page_title="Salud", layout="wide")
 
 st.markdown("""
 <style>
-/* ── Fuente del sistema (SF Pro en iOS, Segoe en Windows) ── */
+/* ── Fuente sistema ── */
 html, body, [class*="css"] {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
                  "Helvetica Neue", Arial, sans-serif !important;
+    color: #1C1C1E !important;
 }
 
-/* ── Fondo gris iOS ── */
-.stApp { background-color: #F2F2F7 !important; }
+/* ── Fondo gris iOS en toda la app ── */
+.stApp,
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+footer,
+.stSidebar,
+[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div {
+    background-color: #F2F2F7 !important;
+    color: #1C1C1E !important;
+}
+
+/* ── Contenido principal ── */
 .main .block-container {
+    background-color: #F2F2F7 !important;
     padding-top: 1.2rem !important;
     padding-bottom: 2rem !important;
 }
 
-/* ── Títulos ── */
-h1 {
-    font-size: 28px !important; font-weight: 700 !important;
-    color: #1C1C1E !important; letter-spacing: -0.3px !important;
-    margin-bottom: 12px !important;
+/* ── Inputs, selects, text areas ── */
+input, textarea,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input,
+[data-testid="stTimeInput"] input,
+[data-testid="stSelectbox"] > div,
+[data-baseweb="input"], [data-baseweb="textarea"],
+[data-baseweb="select"] > div,
+[data-baseweb="base-input"] {
+    background-color: #FFFFFF !important;
+    color: #1C1C1E !important;
+    border-color: #E5E5EA !important;
+    border-radius: 10px !important;
 }
-h2, h3 {
-    font-size: 17px !important; font-weight: 600 !important;
-    color: #1C1C1E !important; margin-top: 20px !important;
+
+/* ── Formularios ── */
+[data-testid="stForm"] {
+    background: #FFFFFF !important;
+    border: none !important;
+    border-radius: 13px !important;
+    padding: 16px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Tablas y DataEditor ── */
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"],
+[data-testid="data-grid-canvas"],
+.dvn-scroller, .glideDataEditor {
+    background: #FFFFFF !important;
+    border-radius: 13px !important;
+    overflow: hidden !important;
+}
+[data-testid="stDataFrame"] > div,
+[data-testid="stDataEditor"] > div {
+    background: #FFFFFF !important;
+    border-radius: 13px !important;
+    border: none !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
 }
 
 /* ── Tarjetas de métricas ── */
@@ -57,17 +103,30 @@ h2, h3 {
 }
 [data-testid="stMetricDelta"] { font-size: 13px !important; }
 
+/* ── Títulos ── */
+h1 {
+    font-size: 28px !important; font-weight: 700 !important;
+    color: #1C1C1E !important; letter-spacing: -0.3px !important;
+    margin-bottom: 12px !important;
+}
+h2, h3 {
+    font-size: 17px !important; font-weight: 600 !important;
+    color: #1C1C1E !important; margin-top: 20px !important;
+}
+p, label, span, li { color: #1C1C1E !important; }
+
 /* ── Botones ── */
 .stButton > button {
     border-radius: 10px !important; font-weight: 600 !important;
     font-size: 15px !important; transition: opacity .15s !important;
+    border: none !important;
 }
 .stButton > button:hover { opacity: 0.8 !important; }
 .stButton > button[kind="primary"] {
-    background: #007AFF !important; color: #fff !important; border: none !important;
+    background: #007AFF !important; color: #fff !important;
 }
 .stButton > button[kind="secondary"] {
-    background: #E5E5EA !important; color: #007AFF !important; border: none !important;
+    background: #E5E5EA !important; color: #007AFF !important;
 }
 
 /* ── Expanders ── */
@@ -80,7 +139,11 @@ details {
 details summary {
     font-weight: 600 !important; font-size: 15px !important;
     color: #1C1C1E !important; padding: 12px 16px !important;
+    background: #FFFFFF !important;
 }
+
+/* ── Alertas / info boxes ── */
+.stAlert { border-radius: 12px !important; border: none !important; }
 
 /* ── Captions ── */
 .stCaption p { font-size: 12px !important; color: #8E8E93 !important; line-height: 1.45 !important; }
@@ -88,13 +151,10 @@ details summary {
 /* ── Dividers ── */
 hr { border: none !important; border-top: 0.5px solid #C6C6C8 !important; margin: 14px 0 !important; }
 
-/* ── Alertas ── */
-.stAlert { border-radius: 12px !important; border: none !important; }
+/* ── Slider ── */
+[data-testid="stSlider"] > div { background: transparent !important; }
 
-/* ── DataFrames ── */
-[data-testid="stDataFrame"] { border-radius: 13px !important; overflow: hidden !important; }
-
-/* ── Menú: desktop ─────────────────────────── */
+/* ── Menú horizontal ── */
 nav[class*="nav"] {
     background: #FFFFFF !important;
     border-radius: 13px !important;
@@ -102,7 +162,7 @@ nav[class*="nav"] {
     margin-bottom: 12px !important;
 }
 
-/* ── Menú: móvil — solo icono + texto pequeño ── */
+/* ── Móvil: menú compacto ── */
 @media (max-width: 640px) {
     .nav-link span { font-size: 10px !important; display: block !important; margin-top: 2px !important; }
     .nav-link { padding: 6px 4px !important; }
