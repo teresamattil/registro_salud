@@ -11,7 +11,106 @@ from io import StringIO
 import re
 from streamlit_option_menu import option_menu
 
-st.set_page_config(page_title="Diario de comidas", layout="wide")
+st.set_page_config(page_title="Salud", layout="wide")
+
+st.markdown("""
+<style>
+/* ── Fuente del sistema (SF Pro en iOS, Segoe en Windows) ── */
+html, body, [class*="css"] {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                 "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* ── Fondo gris iOS ── */
+.stApp { background-color: #F2F2F7 !important; }
+.main .block-container {
+    padding-top: 1.2rem !important;
+    padding-bottom: 2rem !important;
+}
+
+/* ── Títulos ── */
+h1 {
+    font-size: 28px !important; font-weight: 700 !important;
+    color: #1C1C1E !important; letter-spacing: -0.3px !important;
+    margin-bottom: 12px !important;
+}
+h2, h3 {
+    font-size: 17px !important; font-weight: 600 !important;
+    color: #1C1C1E !important; margin-top: 20px !important;
+}
+
+/* ── Tarjetas de métricas ── */
+[data-testid="metric-container"] {
+    background: #FFFFFF !important;
+    border-radius: 13px !important;
+    padding: 14px 16px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
+}
+[data-testid="stMetricValue"] {
+    font-size: 26px !important; font-weight: 700 !important;
+    color: #1C1C1E !important; letter-spacing: -0.5px !important;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 11px !important; font-weight: 500 !important;
+    color: #8E8E93 !important; text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+[data-testid="stMetricDelta"] { font-size: 13px !important; }
+
+/* ── Botones ── */
+.stButton > button {
+    border-radius: 10px !important; font-weight: 600 !important;
+    font-size: 15px !important; transition: opacity .15s !important;
+}
+.stButton > button:hover { opacity: 0.8 !important; }
+.stButton > button[kind="primary"] {
+    background: #007AFF !important; color: #fff !important; border: none !important;
+}
+.stButton > button[kind="secondary"] {
+    background: #E5E5EA !important; color: #007AFF !important; border: none !important;
+}
+
+/* ── Expanders ── */
+details {
+    background: #FFFFFF !important; border-radius: 13px !important;
+    border: none !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
+    margin-bottom: 8px !important;
+}
+details summary {
+    font-weight: 600 !important; font-size: 15px !important;
+    color: #1C1C1E !important; padding: 12px 16px !important;
+}
+
+/* ── Captions ── */
+.stCaption p { font-size: 12px !important; color: #8E8E93 !important; line-height: 1.45 !important; }
+
+/* ── Dividers ── */
+hr { border: none !important; border-top: 0.5px solid #C6C6C8 !important; margin: 14px 0 !important; }
+
+/* ── Alertas ── */
+.stAlert { border-radius: 12px !important; border: none !important; }
+
+/* ── DataFrames ── */
+[data-testid="stDataFrame"] { border-radius: 13px !important; overflow: hidden !important; }
+
+/* ── Menú: desktop ─────────────────────────── */
+nav[class*="nav"] {
+    background: #FFFFFF !important;
+    border-radius: 13px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
+    margin-bottom: 12px !important;
+}
+
+/* ── Menú: móvil — solo icono + texto pequeño ── */
+@media (max-width: 640px) {
+    .nav-link span { font-size: 10px !important; display: block !important; margin-top: 2px !important; }
+    .nav-link { padding: 6px 4px !important; }
+    .nav-link i { font-size: 18px !important; display: block !important; }
+    .main .block-container { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 REPO = "teresamattil/registro_salud"
 FILE = "comidas.csv"
@@ -115,11 +214,19 @@ _prev_menu = st.session_state.get("_prev_menu")
 
 _menu_val = option_menu(
     menu_title=None,
-    options=["Resumen diario", "Registro", "Peso & Calorías", "Estimación", "Modelo de peso"],
-    icons=["calendar-check", "calendar3", "speedometer2", "lightning-fill", "bar-chart-line"],
-    menu_icon="cast",
+    options=["Hoy", "Registro", "Evolución", "Estimación", "Modelo"],
+    icons=["sun", "list-ul", "graph-up", "stars", "cpu"],
     default_index=0,
     orientation="horizontal",
+    styles={
+        "container":         {"padding": "4px 8px", "background-color": "#FFFFFF"},
+        "icon":              {"color": "#8E8E93",  "font-size": "15px"},
+        "nav-link":          {"font-size": "13px", "font-weight": "500",
+                              "color": "#3C3C43",  "padding": "8px 10px",
+                              "border-radius": "8px"},
+        "nav-link-selected": {"background-color": "#F2F2F7", "color": "#007AFF",
+                              "font-weight": "600"},
+    },
 )
 
 _user_clicked = _prev_menu is not None and _menu_val != _prev_menu
@@ -134,8 +241,8 @@ else:
     pagina = _menu_val
 
 # ---------------- PÁGINA 1 ----------------
-if pagina == "Resumen diario":
-    st.title("🍽️ Diario de comidas")
+if pagina == "Hoy":
+    st.title("Hoy")
 
     if "dia_seleccionado" not in st.session_state:
         st.session_state.dia_seleccionado = date.today()
@@ -209,7 +316,7 @@ if pagina == "Resumen diario":
 
 # ---------------- PÁGINA 2 ----------------
 elif pagina == "Registro":
-    st.title("📋 Registro de días")
+    st.title("Registro")
 
     dias_atras = st.slider("Últimos días", 7, 60, 30)
     hoy = date.today()
@@ -230,9 +337,9 @@ elif pagina == "Registro":
 
         with col1:
             if info:
-                st.markdown(f"✅ **{label}**")
+                st.markdown(f'<span style="color:#34C759;font-size:10px;">●</span> **{label}**', unsafe_allow_html=True)
             else:
-                st.markdown(f"❌ **{label}**")
+                st.markdown(f'<span style="color:#C6C6C8;font-size:10px;">●</span> **{label}**', unsafe_allow_html=True)
         with col2:
             if info:
                 st.caption(f"{info['n']} comidas · {int(info['kcal'])} kcal")
@@ -241,12 +348,12 @@ elif pagina == "Registro":
         with col3:
             if st.button("Ir", key=f"ir_{dia_r}"):
                 st.session_state.dia_seleccionado = dia_r
-                st.session_state["nav_page"] = "Resumen diario"
+                st.session_state["nav_page"] = "Hoy"
                 st.rerun()
 
 # ---------------- PÁGINA 3 ----------------
-elif pagina == "Peso & Calorías":
-    st.title("⚖️ Peso & Calorías")
+elif pagina == "Evolución":
+    st.title("Evolución")
 
     df_peso = load_peso()
     df_cals = df.groupby("Fecha", as_index=False)["calorías_estimadas"].sum()
@@ -369,7 +476,7 @@ elif pagina == "Peso & Calorías":
 
 # ---------------- PÁGINA 4 ----------------
 elif pagina == "Estimación":
-    st.title("⚡ Estimar calorías automáticamente")
+    st.title("Estimación")
 
     pendientes = df[df["calorías_estimadas"] == 0.0].copy()
     if pendientes.empty:
@@ -427,8 +534,8 @@ Sin texto adicional. Solo el CSV.
         st.rerun()
 
 # ---------------- PÁGINA 5: MODELO DE PESO ----------------
-elif pagina == "Modelo de peso":
-    st.title("📊 Modelo explicativo del peso")
+elif pagina == "Modelo":
+    st.title("Modelo")
 
     # ---- Cargar fuentes ----
     df_basal  = load_basal_energy()
@@ -676,7 +783,7 @@ elif pagina == "Modelo de peso":
     st.divider()
 
     # ---- Tabla de coeficientes ----
-    st.subheader("¿Qué explica los cambios de peso?")
+    st.subheader("Factores de peso")
     coef_norm = w[1:]
     coef_orig = coef_norm / sigma
     df_coef = pd.DataFrame({
@@ -690,7 +797,7 @@ elif pagina == "Modelo de peso":
     )
 
     # ---- Gráfica predicción vs real (último mes) ----
-    st.subheader("Predicción vs realidad — último mes")
+    st.subheader("Predicción vs real")
     cutoff_30 = date.today() - pd.Timedelta(days=30)
     mask_30 = np.array([f >= cutoff_30 for f in df_m["fecha"]])
     if mask_30.sum() < 3:
@@ -714,7 +821,7 @@ elif pagina == "Modelo de peso":
     st.plotly_chart(fig_m, use_container_width=True)
 
     # ---- Tendencia mensual de features ----
-    st.subheader("¿Qué ha cambiado mes a mes?")
+    st.subheader("Tendencia mensual")
 
     _dt = df_master.copy()
     _dt["mes"] = pd.to_datetime(_dt["Fecha"]).dt.to_period("M").dt.to_timestamp()
@@ -793,7 +900,7 @@ elif pagina == "Modelo de peso":
         )
 
     # ---- Contribution plot mensual ----
-    st.subheader("Contribución mensual de cada factor")
+    st.subheader("Contribuciones")
     st.caption(
         "Barras apiladas: cuánto aporta cada variable al Δpeso predicho (g/día). "
         "Hacia arriba = empuja a subir peso; hacia abajo = a bajarlo. "
