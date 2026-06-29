@@ -194,7 +194,7 @@ def save_data(df, message):
     content = base64.b64encode(df.to_csv(index=False).encode()).decode()
     requests.put(API_URL, headers=HEADERS, json={"message": message, "content": content, "sha": sha})
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_peso():
     dp = pd.read_csv("data/peso_diario.csv")
     dp["Date"] = pd.to_datetime(dp["Date"]).dt.date
@@ -202,21 +202,21 @@ def load_peso():
     dp.columns = ["Fecha", "peso_kg"]
     return dp
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_basal_energy():
     d = pd.read_csv("data/basal_energy.csv")
     d["Fecha"] = pd.to_datetime(d["Date"]).dt.date
     d["basal_kcal"] = d["Basal energy burned(kcal)"]
     return d[["Fecha", "basal_kcal"]]
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_active_energy():
     d = pd.read_csv("data/active_energy.csv")
     d["Fecha"] = pd.to_datetime(d["Date"]).dt.date
     d["activo_kcal"] = pd.to_numeric(d["Active energy burned(kcal)"], errors="coerce")
     return d[["Fecha", "activo_kcal"]]
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_sleep_data():
     d = pd.read_csv("data/sleep_time.csv")
     rows = []
@@ -236,7 +236,7 @@ def load_sleep_data():
         return pd.DataFrame(columns=["Fecha", "horas_cama"])
     return pd.DataFrame(rows).groupby("Fecha", as_index=False)["horas_cama"].sum()
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_ciclo():
     d = pd.read_csv("data/ciclo.csv")
     d["inicio"] = pd.to_datetime(d["Fecha_inicio_cliclo"], dayfirst=True).dt.date
@@ -456,9 +456,19 @@ elif pagina == "Evolución":
     hoy = pd.Timestamp(date.today())
     df_v = df_merged[df_merged["Fecha"] >= hoy - pd.Timedelta(days=dias)].copy() if dias else df_merged.copy()
 
+    # ── Formateador de fechas en español (sin año) ──────────────────
+    _DIAS_ES  = ["L", "M", "X", "J", "V", "S", "D"]
+    _MESES_ES = ["enero","febrero","marzo","abril","mayo","junio",
+                 "julio","agosto","septiembre","octubre","noviembre","diciembre"]
+    def _fmt_es(f):
+        t = pd.Timestamp(f)
+        return f"{_DIAS_ES[t.weekday()]} {t.day} {_MESES_ES[t.month - 1]}"
+
     # ---- Agregación según período ----
     if periodo in ["1S", "1M"]:
-        df_plot = df_v.rename(columns={"Fecha": "x"})
+        df_plot = df_v.rename(columns={"Fecha": "x"}).copy()
+        df_plot["x_label"] = df_plot["x"].apply(_fmt_es)
+        _x_ord = df_plot["x_label"].tolist()   # orden cronológico para el eje
         kcal_label = "Calorías"
     elif periodo in ["6M", "1A"]:
         df_v["x"] = df_v["Fecha"].dt.to_period("W").apply(lambda p: p.start_time)
@@ -491,11 +501,14 @@ elif pagina == "Evolución":
         m3.metric("Media calórica", f"{kcal_media:.0f} kcal/día")
 
     # ---- Gráfica ----
+    _diario = periodo in ["1S", "1M"]
+    _xc = "x_label" if _diario else "x"   # columna x a usar en trazas
+
     fig = go.Figure()
 
     # Barras de calorías
     fig.add_trace(go.Bar(
-        x=df_plot["x"], y=df_plot["calorías_estimadas"],
+        x=df_plot[_xc], y=df_plot["calorías_estimadas"],
         name=kcal_label, marker_color="#115a8e", opacity=0.55, yaxis="y1"
     ))
     fig.add_hline(
@@ -506,33 +519,40 @@ elif pagina == "Evolución":
     # Peso
     dp = df_plot.dropna(subset=["peso_kg"])
     fig.add_trace(go.Scatter(
-        x=dp["x"], y=dp["peso_kg"],
+        x=dp[_xc], y=dp["peso_kg"],
         name="Peso (kg)", yaxis="y2",
         line=dict(color="#e74c3c", width=2), mode="lines+markers",
-        marker=dict(size=4 if periodo not in ["1S", "1M"] else 6),
+        marker=dict(size=6 if _diario else 4),
     ))
 
     # Media móvil 7 días (solo en vista diaria con suficientes puntos)
-    if periodo in ["1S", "1M"] and len(dp) >= 5:
+    if _diario and len(dp) >= 5:
         dp = dp.copy()
         dp["rolling"] = dp["peso_kg"].rolling(7, min_periods=2, center=True).mean()
         fig.add_trace(go.Scatter(
-            x=dp["x"], y=dp["rolling"],
+            x=dp[_xc], y=dp["rolling"],
             name="Media 7 días", yaxis="y2",
             line=dict(color="#c0392b", dash="dot", width=1.5), mode="lines",
         ))
 
     # Línea de tendencia (en 6M, 1A, Todo)
-    if periodo not in ["1S", "1M"] and len(dp) >= 3:
+    if not _diario and len(dp) >= 3:
         idx_t = np.arange(len(dp))
         tend  = np.poly1d(np.polyfit(idx_t, dp["peso_kg"].values, 1))(idx_t)
         fig.add_trace(go.Scatter(
-            x=dp["x"].values, y=tend,
+            x=dp[_xc].values, y=tend,
             name="Tendencia", yaxis="y2",
             line=dict(color="#e74c3c", dash="dash", width=1.5), mode="lines",
         ))
 
+    _xaxis_cfg = dict(
+        title="Calorías", showgrid=True, gridcolor="#f0f0f0"
+    )
+    if _diario:
+        _xaxis_cfg = dict(categoryorder="array", categoryarray=_x_ord)
+
     fig.update_layout(
+        xaxis=_xaxis_cfg if _diario else {},
         yaxis=dict(title="Calorías", showgrid=True, gridcolor="#f0f0f0"),
         yaxis2=dict(title="Peso (kg)", overlaying="y", side="right", showgrid=False),
         legend=dict(orientation="h", y=-0.15, x=0),
@@ -542,6 +562,8 @@ elif pagina == "Evolución":
         paper_bgcolor="white",
         bargap=0.15,
     )
+    if _diario:
+        fig.update_xaxes(categoryorder="array", categoryarray=_x_ord)
     st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- PÁGINA 4 ----------------
