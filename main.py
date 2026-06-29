@@ -380,10 +380,17 @@ elif pagina == "Registro":
         .to_dict("index")
     )
 
+    st.markdown("""
+    <style>
+    /* Registro: mantener columnas en fila en móvil */
+    [data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; gap: 4px !important; }
+    [data-testid="stHorizontalBlock"] > div { min-width: 0 !important; }
+    </style>""", unsafe_allow_html=True)
+
     nombres_dia = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
     for dia_r in rango:
-        col1, col2, col3 = st.columns([2, 4, 1])
+        col1, col2, col3 = st.columns([3, 5, 1])
         info = dias_con_datos.get(dia_r)
         label = f"{nombres_dia[dia_r.weekday()]} {dia_r.strftime('%d %b')}"
 
@@ -420,7 +427,7 @@ elif pagina == "Evolución":
     # ---- Selector de período ----
     PERIODOS = {"1S": 7, "1M": 30, "6M": 182, "1A": 365, "Todo": None}
     if "periodo_peso" not in st.session_state:
-        st.session_state["periodo_peso"] = "1M"
+        st.session_state["periodo_peso"] = "1S"
 
     cols_p = st.columns(len(PERIODOS))
     for col, (label, _) in zip(cols_p, PERIODOS.items()):
@@ -869,7 +876,11 @@ elif pagina == "Modelo":
         line=dict(color="#115a8e", dash="dash")
     ))
     fig_m.add_hline(y=0, line_dash="dot", line_color="gray")
-    fig_m.update_layout(yaxis_title="g/día", hovermode="x unified")
+    fig_m.update_layout(
+        yaxis_title="g/día", hovermode="x unified",
+        legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5),
+        margin=dict(b=60),
+    )
     st.plotly_chart(fig_m, use_container_width=True)
 
     # ---- Tendencia mensual de features ----
