@@ -68,21 +68,13 @@ input, textarea,
     box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
 }
 
-/* ── Tablas y DataEditor ── */
-[data-testid="stDataFrame"],
-[data-testid="stDataEditor"],
-[data-testid="data-grid-canvas"],
-.dvn-scroller, .glideDataEditor {
-    background: #FFFFFF !important;
+/* ── Tablas y DataEditor — solo forma exterior, sin tocar el canvas interno ── */
+[data-testid="stDataFrame"] > div:first-child,
+[data-testid="stDataEditor"] > div:first-child {
     border-radius: 13px !important;
     overflow: hidden !important;
-}
-[data-testid="stDataFrame"] > div,
-[data-testid="stDataEditor"] > div {
-    background: #FFFFFF !important;
-    border-radius: 13px !important;
-    border: none !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05) !important;
+    border: none !important;
 }
 
 /* ── Tarjetas de métricas ── */
@@ -113,7 +105,7 @@ h2, h3 {
     font-size: 17px !important; font-weight: 600 !important;
     color: #1C1C1E !important; margin-top: 20px !important;
 }
-p, label, span, li { color: #1C1C1E !important; }
+.stMarkdown p, .stText p, label { color: #1C1C1E !important; }
 
 /* ── Botones ── */
 .stButton > button {
