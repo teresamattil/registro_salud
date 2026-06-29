@@ -401,7 +401,18 @@ elif pagina == "Registro":
                 st.markdown(f'<span style="color:#C6C6C8;font-size:10px;">●</span> **{label}**', unsafe_allow_html=True)
         with col2:
             if info:
-                st.caption(f"{info['n']} comidas · {int(info['kcal'])} kcal")
+                _kcal = int(info["kcal"])
+                _pct  = min(_kcal / objetivo * 100, 100)
+                _over = _kcal > objetivo
+                _bar  = "#FF3B30" if _over else "#34C759"
+                _txt  = "#FF3B30" if _over else "#8E8E93"
+                st.markdown(f"""
+                <div style="margin-top:6px">
+                  <div style="background:#E5E5EA;border-radius:4px;height:5px;overflow:hidden">
+                    <div style="background:{_bar};width:{_pct:.1f}%;height:5px;border-radius:4px"></div>
+                  </div>
+                  <span style="font-size:11px;color:{_txt}">{_kcal} / {objetivo} kcal</span>
+                </div>""", unsafe_allow_html=True)
             else:
                 st.caption("Sin datos")
         with col3:
