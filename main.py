@@ -260,14 +260,56 @@ def _fase(fecha, ciclos):
 df = load_data()
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 
+def _run_estimacion(df_global):
+    """Llama a Gemini para estimar calorías y macros de las filas pendientes."""
+    pendientes = df_global[df_global["calorías_estimadas"] == 0.0].copy()
+    if pendientes.empty:
+        return df_global, 0
+    csv_text = pendientes.rename(columns={
+        "Fecha":"fecha","hora":"hora","comida":"descripcion","calorías_estimadas":"calorias"
+    })[["fecha","hora","descripcion","calorias"]].to_csv(index=False)
+    prompt = f"""ROL: Eres un asistente nutricional especializado en estimación de alimentos consumidos en España.
+OBJETIVO: Para los ítems con calorias=0.0, estima simultáneamente calorías y macronutrientes.
+CAMPOS A ESTIMAR (solo donde calorias=0.0):
+- calorias: kilocalorías totales de la porción
+- carbohidratos_g: carbohidratos totales en gramos
+- proteinas_g: proteínas en gramos
+- sodio_nivel: "bajo" / "medio" / "alto"
+  * bajo: <300mg sodio (frutas, verduras, café, pollo plancha, yogur, pescado fresco)
+  * medio: 300-700mg (pan, queso fresco, huevos, plato casero normal, legumbres)
+  * alto: >700mg (embutidos, jamón, quesos curados, patatas de bolsa, fast food, pizza, restaurante, precocinados, soja, aperitivos)
+FORMATO ENTRADA:
+{csv_text}
+FORMATO SALIDA: CSV con columnas: fecha,hora,descripcion,calorias,carbohidratos_g,proteinas_g,sodio_nivel
+Sin texto adicional. Solo el CSV."""
+    response = model.generate_content(prompt)
+    raw = re.sub(r"^```.*?\n|\n```$", "", response.text.strip(), flags=re.DOTALL)
+    df_est = pd.read_csv(StringIO(raw))
+    df_est.columns = ["Fecha","hora","comida","calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]
+    df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
+    df_est["carbohidratos_g"] = pd.to_numeric(df_est["carbohidratos_g"], errors="coerce")
+    df_est["proteinas_g"]     = pd.to_numeric(df_est["proteinas_g"],     errors="coerce")
+    keys = ["Fecha","hora","comida"]
+    df_out = df_global.merge(
+        df_est[keys + ["calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]],
+        on=keys, how="left", suffixes=("","_new")
+    )
+    df_out["calorías_estimadas"] = df_out["calorías_estimadas_new"].fillna(df_out["calorías_estimadas"])
+    for col in ["carbohidratos_g","proteinas_g","sodio_nivel"]:
+        df_out[col] = df_out[col+"_new"].combine_first(df_out[col])
+    df_out = df_out.drop(columns=[c for c in df_out.columns if c.endswith("_new")])
+    save_data(df_out, "Estimar calorías y macros")
+    st.cache_data.clear()
+    return df_out, len(pendientes)
+
 # ---------------- MENU VISUAL ----------------
 
 _prev_menu = st.session_state.get("_prev_menu")
 
 _menu_val = option_menu(
     menu_title=None,
-    options=["Hoy", "Registro", "Evolución", "Estimación", "Modelo"],
-    icons=["sun", "list-ul", "graph-up", "stars", "cpu"],
+    options=["Hoy", "Registro", "Evolución", "Modelo"],
+    icons=["sun", "list-ul", "graph-up", "cpu"],
     default_index=0,
     orientation="horizontal",
     styles={
@@ -294,6 +336,10 @@ else:
 
 # ---------------- PÁGINA 1 ----------------
 if pagina == "Hoy":
+    if st.session_state.get("nav_page") == "Hoy":
+        if st.button("← Registro"):
+            st.session_state["nav_page"] = "Registro"
+            st.rerun()
     st.title("Hoy")
 
     if "dia_seleccionado" not in st.session_state:
@@ -368,7 +414,19 @@ if pagina == "Hoy":
 
 # ---------------- PÁGINA 2 ----------------
 elif pagina == "Registro":
-    st.title("Registro")
+    _r_title, _r_btn = st.columns([5, 2])
+    _r_title.title("Registro")
+    with _r_btn:
+        st.write("")  # alinear verticalmente
+        if st.button("Estimar calorías", use_container_width=True, type="primary"):
+            n_pend = (df["calorías_estimadas"] == 0.0).sum()
+            if n_pend == 0:
+                st.toast("No hay entradas pendientes de estimar")
+            else:
+                with st.spinner(f"Estimando {n_pend} entradas…"):
+                    df, n = _run_estimacion(df)
+                st.toast(f"{n} entradas estimadas")
+                st.rerun()
 
     dias_atras = st.slider("Últimos días", 7, 60, 30)
     hoy = date.today()
@@ -566,68 +624,17 @@ elif pagina == "Evolución":
         fig.update_xaxes(categoryorder="array", categoryarray=_x_ord)
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- PÁGINA 4 ----------------
-elif pagina == "Estimación":
-    st.title("Estimación")
-
-    pendientes = df[df["calorías_estimadas"] == 0.0].copy()
-    if pendientes.empty:
-        st.info("No hay filas pendientes")
-        st.stop()
-
-    st.write(f"Filas pendientes: {len(pendientes)}")
-    st.dataframe(pendientes[["Fecha","hora","comida","calorías_estimadas"]], use_container_width=True)
-
-    csv_text = pendientes.rename(columns={
-        "Fecha":"fecha","hora":"hora","comida":"descripcion","calorías_estimadas":"calorias"
-    })[["fecha","hora","descripcion","calorias"]].to_csv(index=False)
-
-    prompt = f"""
-ROL: Eres un asistente nutricional especializado en estimación de alimentos consumidos en España.
-
-OBJETIVO: Para los ítems con calorias=0.0, estima simultáneamente calorías y macronutrientes.
-
-CAMPOS A ESTIMAR (solo donde calorias=0.0):
-- calorias: kilocalorías totales de la porción
-- carbohidratos_g: carbohidratos totales en gramos
-- proteinas_g: proteínas en gramos
-- sodio_nivel: "bajo" / "medio" / "alto"
-  * bajo: <300mg sodio (frutas, verduras, café, pollo plancha, yogur, pescado fresco)
-  * medio: 300-700mg (pan, queso fresco, huevos, plato casero normal, legumbres)
-  * alto: >700mg (embutidos, jamón, quesos curados, patatas de bolsa, fast food, pizza, restaurante, precocinados, soja, aperitivos)
-
-FORMATO ENTRADA:
-{csv_text}
-
-FORMATO SALIDA: CSV con columnas: fecha,hora,descripcion,calorias,carbohidratos_g,proteinas_g,sodio_nivel
-Sin texto adicional. Solo el CSV.
-"""
-
-    if st.button("Ejecutar estimación"):
-        response = model.generate_content(prompt)
-        raw = re.sub(r"^```.*?\n|\n```$", "", response.text.strip(), flags=re.DOTALL)
-        df_est = pd.read_csv(StringIO(raw))
-        df_est.columns = ["Fecha","hora","comida","calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]
-        df_est["Fecha"] = pd.to_datetime(df_est["Fecha"]).dt.date
-        df_est["carbohidratos_g"] = pd.to_numeric(df_est["carbohidratos_g"], errors="coerce")
-        df_est["proteinas_g"] = pd.to_numeric(df_est["proteinas_g"], errors="coerce")
-        keys = ["Fecha","hora","comida"]
-        df = df.merge(
-            df_est[keys + ["calorías_estimadas","carbohidratos_g","proteinas_g","sodio_nivel"]],
-            on=keys, how="left", suffixes=("","_new")
-        )
-        df["calorías_estimadas"] = df["calorías_estimadas_new"].fillna(df["calorías_estimadas"])
-        for col in ["carbohidratos_g","proteinas_g","sodio_nivel"]:
-            df[col] = df[col+"_new"].combine_first(df[col])
-        df = df.drop(columns=[c for c in df.columns if c.endswith("_new")])
-        save_data(df, "Estimar calorías y macros")
-        st.cache_data.clear()
-        st.success("Estimación completada")
-        st.rerun()
+# ---------------- PÁGINA 4 (eliminada — Estimación integrada en Registro) ----------------
 
 # ---------------- PÁGINA 5: MODELO DE PESO ----------------
 elif pagina == "Modelo":
-    st.title("Modelo")
+    _m_title, _m_btn = st.columns([5, 1])
+    _m_title.title("Modelo")
+    with _m_btn:
+        st.write("")
+        if st.button("Actualizar", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
 
     # ---- Cargar fuentes ----
     df_basal  = load_basal_energy()
