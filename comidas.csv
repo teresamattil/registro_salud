@@ -986,20 +986,20 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-07-16,11:00,Platano,,90.0,23.0,1.1,bajo
 2026-07-16,14:45,Sandwich de pavo de maquina,,310.0,31.0,15.0,alto
 2026-07-16,19:00,Sandwich de pollo de maquina,,340.0,33.0,18.0,alto
-2026-07-19,10:00,Café con leche,,0.0,,,
-2026-07-19,10:00,Tostada de aceite y pavo,,0.0,,,
-2026-07-19,10:00,Vaso de zumo de naranja,,0.0,,,
-2026-07-18,11:30,2 cafés con leche,,0.0,,,
-2026-07-18,11:30,2 tostadas de philadelphia y pavo,,0.0,,,
-2026-07-18,16:00,huevos rotos con morcilla,,0.0,,,
-2026-07-18,16:00,2 croquetas,,0.0,,,
-2026-07-18,16:00,una clara con limón,,0.0,,,
-2026-07-18,21:15,Medio muffin de carrot cake,,0.0,,,
-2026-07-17,08:00,2 Cafés con leche,,0.0,,,
-2026-07-17,09:30,tostada de aceite y pavo,,0.0,,,
-2026-07-17,14:30,bol de crema de calabacín,,0.0,,,
-2026-07-17,19:00,Bolsa de patatas fritas ligeras (Slight),,0.0,,,
-2026-07-17,20:30,2 cervezas,,0.0,,,
-2026-07-17,21:30,1 Perrito caliente con ketchup mayonesa y cebolla frita,,0.0,,,
-2026-07-17,22:00,1 cerveza,,0.0,,,
-2026-07-17,23:45,2 whiskeys coca cola zero,,0.0,,,
+2026-07-19,10:00,Café con leche,,60.0,7.0,5.0,bajo
+2026-07-19,10:00,Tostada de aceite y pavo,,235.0,22.0,9.0,medio
+2026-07-19,10:00,Vaso de zumo de naranja,,95.0,21.0,1.5,bajo
+2026-07-18,11:30,2 cafés con leche,,120.0,14.0,10.0,bajo
+2026-07-18,11:30,2 tostadas de philadelphia y pavo,,360.0,42.0,16.0,medio
+2026-07-18,16:00,huevos rotos con morcilla,,550.0,28.0,22.0,alto
+2026-07-18,16:00,2 croquetas,,160.0,18.0,5.0,medio
+2026-07-18,16:00,una clara con limón,,100.0,15.0,1.0,bajo
+2026-07-18,21:15,Medio muffin de carrot cake,,210.0,26.0,3.0,bajo
+2026-07-17,08:00,2 Cafés con leche,,120.0,14.0,10.0,bajo
+2026-07-17,09:30,tostada de aceite y pavo,,235.0,22.0,9.0,medio
+2026-07-17,14:30,bol de crema de calabacín,,130.0,14.0,3.5,bajo
+2026-07-17,19:00,Bolsa de patatas fritas ligeras (Slight),,190.0,22.0,2.5,alto
+2026-07-17,20:30,2 cervezas,,300.0,24.0,2.0,bajo
+2026-07-17,21:30,1 Perrito caliente con ketchup mayonesa y cebolla frita,,480.0,38.0,16.0,alto
+2026-07-17,22:00,1 cerveza,,150.0,12.0,1.0,bajo
+2026-07-17,23:45,2 whiskeys coca cola zero,,220.0,0.5,0.0,bajo
