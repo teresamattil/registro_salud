@@ -660,7 +660,17 @@ elif pagina == "Modelo":
     _df["_alc"] = _df["comida"].str.lower().apply(lambda x: any(k in str(x) for k in _alc_kw))
     _df["_kcal_alc"] = _df["calorías_estimadas"].where(_df["_alc"], 0.0)
     _df["_carbs"] = pd.to_numeric(_df.get("carbohidratos_g", pd.Series(dtype=float)), errors="coerce")
-    _df["_sodio_alto"] = (_df.get("sodio_nivel", pd.Series(dtype=str)) == "alto").astype(float)
+    # Sodio ponderado: "alto"=1.0, "medio"=0.5, "bajo"/otros=0.0.
+    # Antes solo se contaba "alto"; "medio" (300-700mg, ver prompt de
+    # estimación) quedaba igualado a "bajo". Ver vault/decisiones.md
+    # (modelado, 2026-07-19) para la comparación de R² LOO que justifica
+    # este cambio.
+    _sodio_niv = _df.get("sodio_nivel", pd.Series(dtype=str))
+    _df["_sodio_alto"] = np.select(
+        [_sodio_niv == "alto", _sodio_niv == "medio"],
+        [1.0, 0.5],
+        default=0.0,
+    )
     _df["_sodio_valido"] = (_df.get("sodio_nivel", pd.Series(dtype=str)).notna() &
                             (_df.get("sodio_nivel", pd.Series(dtype=str)) != "")).astype(float)
     # Hora última comida: horas desde medianoche (0–24)
