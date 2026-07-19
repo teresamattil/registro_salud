@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 .streamlit/secrets.toml
 docs/
+.claude/
+docs/
+vault/
