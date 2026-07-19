@@ -725,6 +725,13 @@ elif pagina == "Modelo":
     df_obs = pd.DataFrame(obs)
     if df_obs.empty:
         st.warning("No hay suficientes datos para construir el modelo.")
+        _d1, _d2, _d3, _d4, _d5, _d6 = st.columns(6)
+        _d1.metric("comidas.csv", len(df))
+        _d2.metric("peso_diario.csv", len(df_peso))
+        _d3.metric("basal_energy.csv", len(df_basal))
+        _d4.metric("active_energy.csv", len(df_activo))
+        _d5.metric("sleep_time.csv", len(df_sleep))
+        _d6.metric("ciclo.csv", len(df_ciclo))
         st.stop()
 
     # ---- Selección de features ----
@@ -758,6 +765,14 @@ elif pagina == "Modelo":
 
     if len(df_m) < 10:
         st.warning(f"Solo {len(df_m)} observaciones completas. Añade más días con datos de comida.")
+        _d1, _d2, _d3, _d4, _d5, _d6 = st.columns(6)
+        _d1.metric("comidas.csv", len(df))
+        _d2.metric("peso_diario.csv", len(df_peso))
+        _d3.metric("basal_energy.csv", len(df_basal))
+        _d4.metric("active_energy.csv", len(df_activo))
+        _d5.metric("sleep_time.csv", len(df_sleep))
+        _d6.metric("ciclo.csv", len(df_ciclo))
+        _d1.metric("Obs. modelo (df_obs)", len(df_obs))
         st.stop()
 
     # ---- Ridge regression (alpha=2.0 para estabilizar coeficientes de ciclo) ----
