@@ -1045,16 +1045,16 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-08-21,09:00,Café con leche,,50.0,5.0,3.0,bajo
 2026-08-21,11:30,Dos tostadas con aceite y sal,,260.0,30.0,5.0,medio
 2026-09-01,09:30,3 cafés pequeños,,45.0,4.5,2.5,bajo
-2026-09-01,11:30,2 platanos ,,0.0,,,
-2026-09-01,11:30,1 nectarina ,,0.0,,,
+2026-09-01,11:30,2 platanos ,,180.0,46.0,2.4,bajo
+2026-09-01,11:30,1 nectarina ,,65.0,15.0,1.5,bajo
 2026-09-01,16:30,dos tostadas de atun mayonesa y cebolla frita,,520.0,35.0,18.0,medio
 2026-09-01,16:30,tostada queso de cabra,,210.0,15.0,9.0,medio
 2026-09-01,21:15,3 cervezas,,450.0,36.0,1.5,bajo
 2026-09-01,21:15,picoteo: quicos,,190.0,26.0,3.5,alto
-2026-09-02,07:15,Cafe con leche,,0.0,,,
-2026-09-02,09:30,Cafe con leche pequeño,,0.0,,,
-2026-09-02,12:30,Cafe con leche pequeño,,0.0,,,
-2026-09-02,15:00,Cafe con leche pequeño,,0.0,,,
-2026-09-02,16:30,Ensalada: canonigos+tomate+huevo duro+cebolla+queso de cabra+cebolla frita y una tostada de pan,,0.0,,,
-2026-09-02,20:30,4 cervezas,,0.0,,,
-2026-09-02,20:30,patatas de bolsa (1 ración),,0.0,,,
+2026-09-02,07:15,Cafe con leche,,50.0,5.0,3.2,bajo
+2026-09-02,09:30,Cafe con leche pequeño,,25.0,2.5,1.6,bajo
+2026-09-02,12:30,Cafe con leche pequeño,,25.0,2.5,1.6,bajo
+2026-09-02,15:00,Cafe con leche pequeño,,25.0,2.5,1.6,bajo
+2026-09-02,16:30,Ensalada: canonigos+tomate+huevo duro+cebolla+queso de cabra+cebolla frita y una tostada de pan,,415.0,25.0,18.0,medio
+2026-09-02,20:30,4 cervezas,,340.0,28.0,4.0,bajo
+2026-09-02,20:30,patatas de bolsa (1 ración),,180.0,15.0,2.0,alto
