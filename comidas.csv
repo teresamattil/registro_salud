@@ -1067,15 +1067,15 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-09-04,06:30,Café con leche,,65.0,6.0,5.0,bajo
 2026-09-04,10:30,Café con leche,,65.0,6.0,5.0,bajo
 2026-09-04,10:30,Platano,,95.0,23.0,1.2,bajo
-2026-09-04,16:00,Dos tostadas de atún huevo duro mayonesa y cebolla frita,,0.0,,,
-2026-09-04,21:00,3 cervezas,,0.0,,,
-2026-09-04,21:00,3 bocadillitos mini de calamares con mayonesa y pan brioche,,0.0,,,
-2026-09-04,21:00,3 mini tostas de philadelphia y salmón,,0.0,,,
-2026-09-04,23:45,2 whiskey coca cola cero,,0.0,,,
-2026-09-04,23:45,1 whiskey sprite,,0.0,,,
-2026-09-05,12:00,Café con leche,,0.0,,,
-2026-09-05,12:00,dos tostadas con aceite y queso de pasta blanda,,0.0,,,
-2026-09-05,15:30,Dos tostadas de pan brioche con queso de pasta blanda y pavo,,0.0,,,
-2026-09-05,21:00,dos cervezas,,0.0,,,
-2026-09-05,21:00,picoteo: patatillas y picos (ración pequeña),,0.0,,,
-2026-09-06,09:00,Dos cafés con leche,,0.0,,,
+2026-09-04,16:00,Dos tostadas de atún huevo duro mayonesa y cebolla frita,,485.0,32.0,24.0,medio
+2026-09-04,21:00,3 cervezas,,430.0,36.0,1.5,bajo
+2026-09-04,21:00,3 bocadillitos mini de calamares con mayonesa y pan brioche,,560.0,55.0,18.0,alto
+2026-09-04,21:00,3 mini tostas de philadelphia y salmón,,315.0,14.0,12.0,alto
+2026-09-04,23:45,2 whiskey coca cola cero,,230.0,0.0,0.0,bajo
+2026-09-04,23:45,1 whiskey sprite,,195.0,22.0,0.0,bajo
+2026-09-05,12:00,Café con leche,,65.0,5.5,4.5,bajo
+2026-09-05,12:00,dos tostadas con aceite y queso de pasta blanda,,390.0,30.0,12.0,medio
+2026-09-05,15:30,Dos tostadas de pan brioche con queso de pasta blanda y pavo,,420.0,38.0,17.0,medio
+2026-09-05,21:00,dos cervezas,,285.0,24.0,1.0,bajo
+2026-09-05,21:00,picoteo: patatillas y picos (ración pequeña),,180.0,22.0,2.5,alto
+2026-09-06,09:00,Dos cafés con leche,,130.0,11.0,9.0,bajo
