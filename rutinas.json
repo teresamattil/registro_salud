@@ -1,11 +1,25 @@
 [
   {
+    "id": "990bf2ac601b5c29aaed9d31fd23ee54",
     "nombre": "Cafe con leche",
     "momento": "Desayuno",
-    "comida": "Cafe con leche",
-    "kcal": 0.0,
-    "carbohidratos_g": null,
-    "proteinas_g": null,
-    "sodio_nivel": null
+    "dias_semana": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "items": [
+      {
+        "descripcion": "Cafe con leche",
+        "kcal": 0.0,
+        "carbohidratos_g": null,
+        "proteinas_g": null,
+        "sodio_nivel": null
+      }
+    ]
   }
 ]
