@@ -1106,21 +1106,21 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-09-22,08:00,Café con leche,,65.0,5.0,4.0,bajo
 2026-09-22,10:30,Plátano,,95.0,23.0,1.2,bajo
 2026-09-22,10:30,café con leche,,65.0,5.0,4.0,bajo
-2026-09-22,14:00,Lomo de salmón a la plancha con couscous ,,0.0,,,
+2026-09-22,14:00,Lomo de salmón a la plancha con couscous ,,480.0,35.0,32.0,medio
 2026-09-22,15:30,Café con leche pequeño,,45.0,3.5,3.0,bajo
 2026-09-22,19:30,Quesadilla de philadelphia y pavo,,280.0,26.0,13.0,medio
 2026-09-22,21:30,Cocktail picoteo pequeño (un par de cosillas tipo merlucita o palmeritas de roquefort),,190.0,18.0,6.0,alto
 2026-09-22,21:30,Una cerveza,,150.0,12.0,0.5,bajo
 2026-09-22,21:30,Dos copas de vino blanco,,160.0,5.0,0.0,bajo
-2026-09-22,21:30,Crema vichisoisse ,,0.0,,,
+2026-09-22,21:30,Crema vichisoisse ,,160.0,18.0,4.0,medio
 2026-09-22,21:30,Lubina con patata,,340.0,22.0,26.0,medio
 2026-09-22,22:00,Tartaleta de limón,,320.0,45.0,4.0,bajo
 2026-09-21,21:45,Quesadilla de revuelto queso light salsa de tomate y oregano,,340.0,28.0,18.0,medio
 2026-09-21,14:30,dos tostadas de atun con mayonesa y cebolla frita,,480.0,35.0,22.0,medio
-2026-09-21,10:00,Tostada de aceite y pavo ,,0.0,,,
+2026-09-21,10:00,Tostada de aceite y pavo ,,275.0,26.0,12.0,medio
 2026-09-21,09:00,Cafe con leche,,65.0,5.0,4.0,bajo
-2026-09-21,11:00,puñado de picos ,,0.0,,,
-2026-09-21,11:00,puñado de almendras y nueces ,,0.0,,,
+2026-09-21,11:00,puñado de picos ,,115.0,22.0,3.0,medio
+2026-09-21,11:00,puñado de almendras y nueces ,,190.0,5.0,6.0,bajo
 2026-09-20,10:00,Cafe con leche,,65.0,5.0,4.0,bajo
 2026-09-20,10:00,Dos tostadas de aceite y pavo,,310.0,30.0,14.0,medio
 2026-09-21,14:00,Gazpacho,,110.0,12.0,2.5,medio
@@ -1132,9 +1132,9 @@ Fecha,hora,comida,ruta_foto,calorías_estimadas,carbohidratos_g,proteinas_g,sodi
 2026-10-05,13:30,troxo de pan,,80.0,16.0,2.5,medio
 2026-10-05,21:00,Puñado de picos,,85.0,16.0,2.2,medio
 2026-10-05,21:00,Hamburguesa a la plancha,,260.0,1.0,24.0,medio
-2026-10-19,08:30,Cafe con leche,,0.0,,,
-2026-10-19,10:30,Cafe con leche,,0.0,,,
-2026-10-19,10:30,Puñado de picos,,0.0,,,
-2026-10-19,15:00,un tercio de tortilla de patata casera,,0.0,,,
-2026-10-19,15:00,8 onzas de chocolate con leche,,0.0,,,
-2026-10-19,21:00,Tosta de pincho de tortilla de patata con mayonesa,,0.0,,,
+2026-10-19,08:30,Cafe con leche,,75.0,6.5,4.5,bajo
+2026-10-19,10:30,Cafe con leche,,75.0,6.5,4.5,bajo
+2026-10-19,10:30,Puñado de picos,,115.0,22.0,3.0,medio
+2026-10-19,15:00,un tercio de tortilla de patata casera,,450.0,38.0,15.0,medio
+2026-10-19,15:00,8 onzas de chocolate con leche,,440.0,48.0,6.0,bajo
+2026-10-19,21:00,Tosta de pincho de tortilla de patata con mayonesa,,480.0,42.0,12.0,alto
