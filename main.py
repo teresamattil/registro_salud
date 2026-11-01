@@ -10,6 +10,7 @@ import google.generativeai as genai
 from io import StringIO
 import re
 import json
+import uuid
 from streamlit_option_menu import option_menu
 
 st.set_page_config(page_title="Salud", layout="wide")
@@ -333,6 +334,68 @@ def save_routines(routines):
     result.raise_for_status()
 
 
+def _normalizar_rutinas(data):
+    """Migra rutinas antiguas de un solo alimento al nuevo formato calendario."""
+    normalizadas = []
+    for i, rutina in enumerate(data or []):
+        if not isinstance(rutina, dict):
+            continue
+        nombre = str(rutina.get("nombre", f"Rutina {i+1}")).strip() or f"Rutina {i+1}"
+        rid = str(rutina.get("id") or uuid.uuid5(uuid.NAMESPACE_URL, f"registro_salud:{nombre}").hex)
+        momento = rutina.get("momento", "Comida")
+        if momento not in MOMENTOS:
+            momento = "Comida"
+        dias = rutina.get("dias_semana", list(range(7)))
+        try:
+            dias = sorted({int(d) for d in dias if 0 <= int(d) <= 6})
+        except (TypeError, ValueError):
+            dias = list(range(7))
+        items = rutina.get("items")
+        if not isinstance(items, list):
+            # Compatibilidad con las rutinas antiguas (un alimento por rutina).
+            items = [{
+                "descripcion": rutina.get("comida", nombre),
+                "kcal": rutina.get("kcal", 0),
+                "carbohidratos_g": rutina.get("carbohidratos_g"),
+                "proteinas_g": rutina.get("proteinas_g"),
+                "sodio_nivel": rutina.get("sodio_nivel"),
+            }]
+        items_limpios = []
+        for item in items:
+            if not isinstance(item, dict) or not str(item.get("descripcion", "")).strip():
+                continue
+            try:
+                kcal = float(item.get("kcal", 0) or 0)
+            except (TypeError, ValueError):
+                kcal = 0.0
+            items_limpios.append({
+                "descripcion": str(item.get("descripcion", "")).strip(),
+                "kcal": kcal,
+                "carbohidratos_g": item.get("carbohidratos_g"),
+                "proteinas_g": item.get("proteinas_g"),
+                "sodio_nivel": item.get("sodio_nivel"),
+            })
+        normalizadas.append({"id": rid, "nombre": nombre, "momento": momento,
+                             "dias_semana": dias, "items": items_limpios})
+    return normalizadas
+
+
+def _rutina_aplica(rutina, fecha):
+    return fecha.weekday() in rutina.get("dias_semana", list(range(7)))
+
+
+def _registrar_rutina(df_actual, rutina, fecha):
+    nuevas = []
+    for item in rutina.get("items", []):
+        fila = _empty_food_row(fecha, rutina["momento"], item["descripcion"], item.get("kcal", 0),
+                               item.get("carbohidratos_g"), item.get("proteinas_g"), item.get("sodio_nivel"))
+        fila["rutina_id"] = rutina["id"]
+        nuevas.append(fila)
+    if nuevas:
+        return pd.concat([df_actual, pd.DataFrame(nuevas)], ignore_index=True)
+    return df_actual
+
+
 def _empty_food_row(fecha, momento, descripcion, kcal=0, carbs=None, proteinas=None, sodio=None):
     return {
         "Fecha": fecha,
@@ -344,6 +407,7 @@ def _empty_food_row(fecha, momento, descripcion, kcal=0, carbs=None, proteinas=N
         "carbohidratos_g": carbs,
         "proteinas_g": proteinas,
         "sodio_nivel": sodio,
+        "rutina_id": "",
     }
 
 
@@ -387,13 +451,18 @@ TEXTO DEL USUARIO:
 
 df = load_data()
 for col, default in [("momento", "Comida"), ("ruta_foto", ""), ("calorías_estimadas", 0),
-                     ("carbohidratos_g", pd.NA), ("proteinas_g", pd.NA), ("sodio_nivel", pd.NA)]:
+                     ("carbohidratos_g", pd.NA), ("proteinas_g", pd.NA), ("sodio_nivel", pd.NA),
+                     ("rutina_id", "")]:
     if col not in df.columns:
         df[col] = default
 df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.date
 df["calorías_estimadas"] = pd.to_numeric(df["calorías_estimadas"], errors="coerce").fillna(0)
 df["momento"] = df["momento"].fillna("Comida")
-rutinas = load_routines()
+rutinas = _normalizar_rutinas(load_routines())
+
+# Persistir automáticamente la migración de las rutinas antiguas al formato calendario.
+if rutinas and any("items" not in r for r in load_routines() if isinstance(r, dict)):
+    save_routines(rutinas)
 
 def _run_estimacion(df_global, save=True):
     """Llama a Gemini para estimar calorías y macros de las filas pendientes."""
@@ -444,8 +513,8 @@ _prev_menu = st.session_state.get("_prev_menu")
 
 _menu_val = option_menu(
     menu_title=None,
-    options=["Hoy", "Pega tu semana", "Registro", "Evolución", "Modelo"],
-    icons=["sun", "calendar-week", "list-ul", "graph-up", "cpu"],
+    options=["Hoy", "Rutinas", "Pega tu semana", "Registro", "Evolución", "Modelo"],
+    icons=["sun", "repeat", "calendar-week", "list-ul", "graph-up", "cpu"],
     default_index=0,
     orientation="horizontal",
     styles={
@@ -507,19 +576,35 @@ if pagina == "Hoy":
                             save_data(df, "Eliminar comida")
                             st.cache_data.clear()
                             st.rerun()
-            opciones = [r for r in rutinas if r.get("momento") == momento]
+            opciones = [r for r in rutinas if r.get("momento") == momento and _rutina_aplica(r, dia)]
             if opciones:
-                st.caption("Rutinas")
-                cols = st.columns(min(3, len(opciones)))
-                for j, rutina in enumerate(opciones):
-                    with cols[j % len(cols)]:
-                        if st.button(rutina["nombre"], key=f"rut_{momento}_{j}", use_container_width=True):
-                            nueva = _empty_food_row(dia, momento, rutina["comida"], rutina.get("kcal", 0),
-                                                    rutina.get("carbohidratos_g"), rutina.get("proteinas_g"), rutina.get("sodio_nivel"))
-                            df = pd.concat([df, pd.DataFrame([nueva])], ignore_index=True)
-                            save_data(df, f"Añadir rutina: {rutina['nombre']}")
-                            st.cache_data.clear()
-                            st.rerun()
+                st.caption("Rutinas previstas · activa el interruptor cuando las hayas hecho")
+                for rutina in opciones:
+                    rutina_id = rutina["id"]
+                    filas_rutina = df_dia[df_dia.get("rutina_id", pd.Series(index=df_dia.index, dtype=str)).astype(str) == rutina_id]
+                    realizada = not filas_rutina.empty
+                    total_rutina = sum(float(it.get("kcal", 0) or 0) for it in rutina.get("items", []))
+                    toggle_key = f"rutina_toggle_{dia}_{rutina_id}"
+                    activada = st.checkbox(
+                        f"{rutina['nombre']} · {total_rutina:.0f} kcal",
+                        value=realizada,
+                        key=toggle_key,
+                        help="Al activarla se añaden todos sus alimentos al registro; al desactivarla se eliminan."
+                    )
+                    if activada != realizada:
+                        if activada:
+                            df = _registrar_rutina(df, rutina, dia)
+                            save_data(df, f"Registrar rutina: {rutina['nombre']}")
+                        else:
+                            df = df[~((df["Fecha"] == dia) & (df["rutina_id"].astype(str) == rutina_id))].copy()
+                            save_data(df, f"Deshacer rutina: {rutina['nombre']}")
+                        st.session_state.pop(toggle_key, None)
+                        st.cache_data.clear()
+                        st.rerun()
+                    with st.expander(f"Ver alimentos · {rutina['nombre']}"):
+                        for item in rutina.get("items", []):
+                            kcal_item = float(item.get("kcal", 0) or 0)
+                            st.caption(f"• {item['descripcion']} — {kcal_item:.0f} kcal")
             with st.expander(f"+ Añadir a {momento}"):
                 with st.form(f"add_{momento}"):
                     descripcion = st.text_input("Qué has comido", key=f"desc_{momento}")
@@ -560,7 +645,7 @@ if pagina == "Hoy":
             st.session_state["reset_contadores_bebida"] = True
             st.rerun()
 
-    # Crear una rutina a partir de cualquier comida ya registrada.
+    # Guardar una comida registrada como rutina sencilla.
     with st.expander("Guardar una comida como rutina"):
         if df_dia.empty:
             st.caption("Registra primero una comida para convertirla en rutina.")
@@ -568,17 +653,22 @@ if pagina == "Hoy":
             indices = df_dia.index.tolist()
             seleccion = st.selectbox("Comida", indices, format_func=lambda i: f"{df.loc[i, 'momento']} · {df.loc[i, 'comida']}")
             nombre_rutina = st.text_input("Nombre de la rutina", value=str(df.loc[seleccion, "comida"])[:50])
+            dias_guardar = st.multiselect("Días habituales", ["L", "M", "X", "J", "V", "S", "D"], default=["L", "M", "X", "J", "V"])
             if st.button("Guardar rutina", key="guardar_rutina"):
                 row = df.loc[seleccion]
+                nombre = nombre_rutina.strip() or str(row["comida"])
                 rutina = {
-                    "nombre": nombre_rutina.strip() or str(row["comida"]),
-                    "momento": row["momento"], "comida": row["comida"],
-                    "kcal": float(row["calorías_estimadas"] or 0),
-                    "carbohidratos_g": None if pd.isna(row.get("carbohidratos_g")) else float(row["carbohidratos_g"]),
-                    "proteinas_g": None if pd.isna(row.get("proteinas_g")) else float(row["proteinas_g"]),
-                    "sodio_nivel": None if pd.isna(row.get("sodio_nivel")) else str(row["sodio_nivel"]),
+                    "id": uuid.uuid4().hex, "nombre": nombre,
+                    "momento": row["momento"], "dias_semana": [["L", "M", "X", "J", "V", "S", "D"].index(d) for d in dias_guardar],
+                    "items": [{
+                        "descripcion": str(row["comida"]),
+                        "kcal": float(row["calorías_estimadas"] or 0),
+                        "carbohidratos_g": None if pd.isna(row.get("carbohidratos_g")) else float(row["carbohidratos_g"]),
+                        "proteinas_g": None if pd.isna(row.get("proteinas_g")) else float(row["proteinas_g"]),
+                        "sodio_nivel": None if pd.isna(row.get("sodio_nivel")) else str(row["sodio_nivel"]),
+                    }]
                 }
-                rutinas = [r for r in rutinas if r.get("nombre") != rutina["nombre"]]
+                rutinas = [r for r in rutinas if r.get("nombre") != nombre]
                 rutinas.append(rutina)
                 save_routines(rutinas)
                 st.success("Rutina guardada.")
@@ -595,6 +685,116 @@ if pagina == "Hoy":
                 save_data(df, "Estimar comidas del día")
             st.cache_data.clear()
             st.rerun()
+
+elif pagina == "Rutinas":
+    st.title("Rutinas")
+    st.write("Configura hábitos que se repiten en determinados días. En **Hoy**, aparecerán como interruptores Sí/No; al activarlos se registran todos sus alimentos.")
+
+    DIAS_LABEL = ["L", "M", "X", "J", "V", "S", "D"]
+    opciones_edicion = ["＋ Crear nueva rutina"] + [r["nombre"] for r in rutinas]
+    seleccion_rutina = st.selectbox("Rutina", opciones_edicion, key="selector_editar_rutina")
+    editando = seleccion_rutina != "＋ Crear nueva rutina"
+    rutina_base = next((r for r in rutinas if r["nombre"] == seleccion_rutina), {}) if editando else {}
+
+    with st.form("form_rutina_calendario", clear_on_submit=False):
+        nombre = st.text_input("Nombre", value=rutina_base.get("nombre", ""), placeholder="Ej. Media mañana", key=f"rutina_nombre_{rutina_base.get('id', 'nueva')}")
+        momento_idx = MOMENTOS.index(rutina_base.get("momento", "Entre horas (antes de comer)")) if rutina_base.get("momento", "Entre horas (antes de comer)") in MOMENTOS else 1
+        momento_rutina = st.selectbox("Momento del día", MOMENTOS, index=momento_idx, key=f"rutina_momento_{rutina_base.get('id', 'nueva')}")
+        dias_base = [DIAS_LABEL[d] for d in rutina_base.get("dias_semana", [0, 1, 2, 3, 4]) if 0 <= d <= 6]
+        dias_rutina = st.multiselect("Se repite estos días", DIAS_LABEL, default=dias_base, key=f"rutina_dias_{rutina_base.get('id', 'nueva')}")
+        items_base = rutina_base.get("items", [])
+        if items_base:
+            tabla_items = pd.DataFrame([{
+                "Alimento / cantidad": it.get("descripcion", ""),
+                "Kcal": it.get("kcal", 0),
+                "Carbohidratos (g)": it.get("carbohidratos_g"),
+                "Proteínas (g)": it.get("proteinas_g"),
+                "Sodio": it.get("sodio_nivel") or "medio",
+            } for it in items_base])
+        else:
+            tabla_items = pd.DataFrame([{
+                "Alimento / cantidad": "", "Kcal": 0,
+                "Carbohidratos (g)": None, "Proteínas (g)": None, "Sodio": "medio"
+            }])
+        st.caption("Añade una fila por alimento. Puedes editar las calorías manualmente; 0 significa que se estimarán al registrarlo en Hoy.")
+        tabla_items_editada = st.data_editor(
+            tabla_items, num_rows="dynamic", use_container_width=True, hide_index=True,
+            column_config={
+                "Alimento / cantidad": st.column_config.TextColumn("Alimento / cantidad", required=True),
+                "Kcal": st.column_config.NumberColumn("Kcal", min_value=0, step=5, format="%.0f"),
+                "Carbohidratos (g)": st.column_config.NumberColumn("Carbohidratos (g)", min_value=0, step=1),
+                "Proteínas (g)": st.column_config.NumberColumn("Proteínas (g)", min_value=0, step=1),
+                "Sodio": st.column_config.SelectboxColumn("Sodio", options=["bajo", "medio", "alto"]),
+            }, key=f"editor_items_rutina_{rutina_base.get('id', 'nueva')}"
+        )
+        guardar_rutina_form = st.form_submit_button("Guardar rutina", type="primary", use_container_width=True)
+
+    if guardar_rutina_form:
+        items_nuevos = []
+        for _, it in tabla_items_editada.iterrows():
+            descripcion = str(it.get("Alimento / cantidad", "")).strip()
+            if not descripcion or descripcion.lower() == "nan":
+                continue
+            items_nuevos.append({
+                "descripcion": descripcion,
+                "kcal": (lambda v: 0.0 if pd.isna(v) else float(v))(pd.to_numeric(it.get("Kcal", 0), errors="coerce")),
+                "carbohidratos_g": None if pd.isna(it.get("Carbohidratos (g)")) else float(it.get("Carbohidratos (g)")),
+                "proteinas_g": None if pd.isna(it.get("Proteínas (g)")) else float(it.get("Proteínas (g)")),
+                "sodio_nivel": str(it.get("Sodio", "medio")),
+            })
+        if not nombre.strip():
+            st.error("Pon un nombre a la rutina.")
+        elif not dias_rutina:
+            st.error("Selecciona al menos un día de la semana.")
+        elif not items_nuevos:
+            st.error("Añade al menos un alimento.")
+        else:
+            rutina_nueva = {
+                "id": rutina_base.get("id", uuid.uuid4().hex),
+                "nombre": nombre.strip(), "momento": momento_rutina,
+                "dias_semana": [DIAS_LABEL.index(d) for d in dias_rutina],
+                "items": items_nuevos,
+            }
+            rutinas = [r for r in rutinas if r.get("id") != rutina_nueva["id"] and r.get("nombre") != rutina_nueva["nombre"]]
+            rutinas.append(rutina_nueva)
+            save_routines(rutinas)
+            st.success("Rutina guardada.")
+            st.rerun()
+
+    # Acceso rápido a la rutina de ejemplo que describe la usuaria.
+    st.divider()
+    st.subheader("Plantilla rápida")
+    st.caption("Crea una rutina de lunes a viernes para dos cafés con leche medianos y un plátano. Las calorías son orientativas y editables.")
+    if st.button("＋ Crear ‘Media mañana (L–V)’", use_container_width=True):
+        nombre_plantilla = "Media mañana (L–V)"
+        plantilla = {
+            "id": uuid.uuid4().hex, "nombre": nombre_plantilla,
+            "momento": "Entre horas (antes de comer)", "dias_semana": [0, 1, 2, 3, 4],
+            "items": [
+                {"descripcion": "2 cafés con leche medianos", "kcal": 140, "carbohidratos_g": None, "proteinas_g": None, "sodio_nivel": "bajo"},
+                {"descripcion": "1 plátano mediano", "kcal": 105, "carbohidratos_g": None, "proteinas_g": None, "sodio_nivel": "bajo"},
+            ]
+        }
+        rutinas = [r for r in rutinas if r.get("nombre") != nombre_plantilla]
+        rutinas.append(plantilla)
+        save_routines(rutinas)
+        st.success("Plantilla creada. Puedes ajustar las cantidades y calorías seleccionándola arriba.")
+        st.rerun()
+
+    st.divider()
+    st.subheader("Tus rutinas")
+    if not rutinas:
+        st.info("Todavía no tienes rutinas creadas.")
+    for rutina in rutinas:
+        dias_txt = " ".join(DIAS_LABEL[d] for d in rutina.get("dias_semana", []))
+        kcal_total = sum(float(it.get("kcal", 0) or 0) for it in rutina.get("items", []))
+        with st.expander(f"{rutina['nombre']} · {rutina['momento']} · {dias_txt} · {kcal_total:.0f} kcal"):
+            for it in rutina.get("items", []):
+                st.write(f"• {it['descripcion']} — {float(it.get('kcal', 0) or 0):.0f} kcal")
+            if st.button("Eliminar rutina", key=f"eliminar_rutina_{rutina['id']}"):
+                rutinas = [r for r in rutinas if r.get("id") != rutina["id"]]
+                save_routines(rutinas)
+                st.rerun()
 
 elif pagina == "Pega tu semana":
     st.title("Pega tu semana")
@@ -638,10 +838,10 @@ elif pagina == "Pega tu semana":
                 edited_preview = edited_preview.copy()
                 edited_preview["Fecha"] = pd.to_datetime(edited_preview["Fecha"]).dt.date
                 edited_preview["hora"] = edited_preview["momento"].map(HORAS_MOMENTO)
-                for col in ["ruta_foto", "calorías_estimadas", "carbohidratos_g", "proteinas_g", "sodio_nivel"]:
+                for col in ["ruta_foto", "calorías_estimadas", "carbohidratos_g", "proteinas_g", "sodio_nivel", "rutina_id"]:
                     if col not in edited_preview.columns:
-                        edited_preview[col] = "" if col == "ruta_foto" else 0 if col == "calorías_estimadas" else pd.NA
-                cols = ["Fecha", "momento", "hora", "comida", "ruta_foto", "calorías_estimadas", "carbohidratos_g", "proteinas_g", "sodio_nivel"]
+                        edited_preview[col] = "" if col in ["ruta_foto", "rutina_id"] else 0 if col == "calorías_estimadas" else pd.NA
+                cols = ["Fecha", "momento", "hora", "comida", "ruta_foto", "calorías_estimadas", "carbohidratos_g", "proteinas_g", "sodio_nivel", "rutina_id"]
                 df_save = pd.concat([df, edited_preview[cols]], ignore_index=True)
                 save_data(df_save, "Guardar registro semanal")
                 st.cache_data.clear()
